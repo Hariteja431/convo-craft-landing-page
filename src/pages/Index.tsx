@@ -5,7 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { HeroVoiceInteraction } from "@/components/HeroVoiceInteraction";
 import { MessageCircle, Users, Play, ArrowRight, CheckCircle, Star } from "lucide-react";
+import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/clerk-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 const Index = () => {
   const [email, setEmail] = useState("");
@@ -36,15 +38,36 @@ const Index = () => {
               <a href="#pricing" className="text-sage-700 dark:text-sage-300 hover:text-sage-900 dark:hover:text-sage-100 transition-colors">Pricing</a>
               <a href="#contact" className="text-sage-700 dark:text-sage-300 hover:text-sage-900 dark:hover:text-sage-100 transition-colors">Contact</a>
               <ThemeToggle />
-              <Button variant="outline" className="border-sage-300 dark:border-sage-600 text-sage-700 dark:text-sage-300 hover:bg-sage-50 dark:hover:bg-sage-800">
-                Sign In
-              </Button>
-              <Button 
-                onClick={() => window.location.href = '/practice'}
-                className="bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700 text-white"
-              >
-                Start Practicing
-              </Button>
+              <SignedOut>
+                <SignInButton mode="modal">
+                  <Button variant="outline" className="border-sage-300 dark:border-sage-600 text-sage-700 dark:text-sage-300 hover:bg-sage-50 dark:hover:bg-sage-800">
+                    Sign In
+                  </Button>
+                </SignInButton>
+              </SignedOut>
+              <SignedIn>
+                <UserButton 
+                  appearance={{
+                    elements: {
+                      avatarBox: "w-8 h-8"
+                    }
+                  }}
+                />
+              </SignedIn>
+              <SignedIn>
+                <Link to="/practice">
+                  <Button className="bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700 text-white">
+                    Start Practicing
+                  </Button>
+                </Link>
+              </SignedIn>
+              <SignedOut>
+                <SignInButton mode="modal">
+                  <Button className="bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700 text-white">
+                    Start Practicing
+                  </Button>
+                </SignInButton>
+              </SignedOut>
             </div>
           </div>
         </div>
@@ -70,22 +93,50 @@ const Index = () => {
                 refine your accent with precision, and build unshakeable confidence in any language.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <Button 
-                  size="lg" 
-                  onClick={() => window.location.href = '/practice'}
-                  className="bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700 text-white px-8 py-6 text-lg"
-                >
-                  <Play className="w-5 h-5 mr-2" />
-                  Begin Your Journey
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="lg"
-                  onClick={() => window.location.href = '/practice'}
-                  className="border-2 border-sage-300 dark:border-sage-600 text-sage-700 dark:text-sage-300 hover:bg-sage-50 dark:hover:bg-sage-800 px-8 py-6 text-lg"
-                >
-                  Experience Demo
-                </Button>
+                <SignedIn>
+                  <Link to="/practice">
+                    <Button 
+                      size="lg" 
+                      className="bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700 text-white px-8 py-6 text-lg"
+                    >
+                      <Play className="w-5 h-5 mr-2" />
+                      Begin Your Journey
+                    </Button>
+                  </Link>
+                </SignedIn>
+                <SignedOut>
+                  <SignInButton mode="modal">
+                    <Button 
+                      size="lg" 
+                      className="bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700 text-white px-8 py-6 text-lg"
+                    >
+                      <Play className="w-5 h-5 mr-2" />
+                      Begin Your Journey
+                    </Button>
+                  </SignInButton>
+                </SignedOut>
+                <SignedIn>
+                  <Link to="/practice">
+                    <Button 
+                      variant="outline" 
+                      size="lg"
+                      className="border-2 border-sage-300 dark:border-sage-600 text-sage-700 dark:text-sage-300 hover:bg-sage-50 dark:hover:bg-sage-800 px-8 py-6 text-lg"
+                    >
+                      Experience Demo
+                    </Button>
+                  </Link>
+                </SignedIn>
+                <SignedOut>
+                  <SignInButton mode="modal">
+                    <Button 
+                      variant="outline" 
+                      size="lg"
+                      className="border-2 border-sage-300 dark:border-sage-600 text-sage-700 dark:text-sage-300 hover:bg-sage-50 dark:hover:bg-sage-800 px-8 py-6 text-lg"
+                    >
+                      Experience Demo
+                    </Button>
+                  </SignInButton>
+                </SignedOut>
               </div>
             </div>
             <div className="relative">
