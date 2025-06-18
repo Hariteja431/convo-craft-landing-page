@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -40,8 +39,11 @@ const Index = () => {
               <Button variant="outline" className="border-sage-300 dark:border-sage-600 text-sage-700 dark:text-sage-300 hover:bg-sage-50 dark:hover:bg-sage-800">
                 Sign In
               </Button>
-              <Button className="bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700 text-white">
-                Get Started
+              <Button 
+                onClick={() => window.location.href = '/practice'}
+                className="bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700 text-white"
+              >
+                Start Practicing
               </Button>
             </div>
           </div>
@@ -70,6 +72,7 @@ const Index = () => {
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                 <Button 
                   size="lg" 
+                  onClick={() => window.location.href = '/practice'}
                   className="bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700 text-white px-8 py-6 text-lg"
                 >
                   <Play className="w-5 h-5 mr-2" />
@@ -78,6 +81,7 @@ const Index = () => {
                 <Button 
                   variant="outline" 
                   size="lg"
+                  onClick={() => window.location.href = '/practice'}
                   className="border-2 border-sage-300 dark:border-sage-600 text-sage-700 dark:text-sage-300 hover:bg-sage-50 dark:hover:bg-sage-800 px-8 py-6 text-lg"
                 >
                   Experience Demo
