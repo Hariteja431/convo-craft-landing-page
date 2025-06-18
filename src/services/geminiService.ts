@@ -1,6 +1,6 @@
 
 const GEMINI_API_KEY = 'AIzaSyAYYUb5vdVChAv9ScK5J0ayCTlZCHqIrnc';
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
 export interface GeminiMessage {
   role: 'user' | 'model';
@@ -48,7 +48,7 @@ export class GeminiService {
       {
         role: 'user',
         parts: [{ 
-          text: `You are a friendly AI conversation partner helping someone practice English. Start a casual conversation about ${topic}. Keep your response conversational, engaging, and ask a follow-up question to continue the dialogue. Limit your response to 2-3 sentences.`
+          text: `You are a friendly AI conversation partner helping someone practice English through speech. Start a casual conversation about ${topic}. Keep your response conversational, engaging, and ask a follow-up question to continue the dialogue. Limit your response to 2-3 sentences. Make it natural for speech.`
         }]
       }
     ];
@@ -68,6 +68,12 @@ export class GeminiService {
     console.log('Continuing conversation with message:', userMessage);
     
     const messages: GeminiMessage[] = [
+      {
+        role: 'user',
+        parts: [{ 
+          text: 'You are a helpful English conversation partner for speech practice. Respond naturally to continue the conversation, ask follow-up questions, and keep the dialogue engaging. Keep responses conversational and suitable for speech - limit to 2-3 sentences.'
+        }]
+      },
       ...conversationHistory,
       {
         role: 'user',
@@ -75,16 +81,8 @@ export class GeminiService {
       }
     ];
 
-    // Add system instruction for natural conversation
-    const systemMessage: GeminiMessage = {
-      role: 'user',
-      parts: [{ 
-        text: 'You are a helpful English conversation partner. Respond naturally to continue the conversation, ask follow-up questions, and keep the dialogue engaging. Limit responses to 2-3 sentences.'
-      }]
-    };
-
     try {
-      const result = await this.makeRequest([systemMessage, ...messages]);
+      const result = await this.makeRequest(messages);
       const response = result.candidates?.[0]?.content?.parts?.[0]?.text || 'That\'s interesting! Tell me more about that.';
       
       console.log('Gemini conversation response:', response);

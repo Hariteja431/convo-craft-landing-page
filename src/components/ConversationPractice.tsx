@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Mic, MicOff, Send, MessageCircle, Volume2 } from 'lucide-react';
+import { Mic, MicOff, Send, MessageCircle, Volume2, VolumeX } from 'lucide-react';
 import { GeminiService, GeminiMessage } from '@/services/geminiService';
 
 export const ConversationPractice = () => {
@@ -15,14 +15,18 @@ export const ConversationPractice = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedTopic, setSelectedTopic] = useState('');
   const [feedback, setFeedback] = useState<{ grammar: string; pronunciation: string; fluency: string } | null>(null);
+  const [isSpeechMode, setIsSpeechMode] = useState(true);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   
   const recognition = useRef<SpeechRecognition | null>(null);
   const conversationRef = useRef<HTMLDivElement>(null);
+  const currentUtterance = useRef<SpeechSynthesisUtterance | null>(null);
 
   const topics = [
     'Daily routine', 'Hobbies', 'Travel', 'Food', 'Work', 'Movies', 'Sports', 'Technology'
   ];
 
+  // Initialize speech recognition
   useEffect(() => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -35,6 +39,11 @@ export const ConversationPractice = () => {
         const transcript = event.results[0][0].transcript;
         setCurrentMessage(transcript);
         setIsListening(false);
+        
+        // Auto-send message if in speech mode
+        if (isSpeechMode) {
+          handleSendMessage(transcript);
+        }
       };
 
       recognition.current.onerror = () => {
@@ -45,13 +54,40 @@ export const ConversationPractice = () => {
         setIsListening(false);
       };
     }
-  }, []);
+  }, [isSpeechMode]);
 
+  // Auto-scroll to bottom of conversation
   useEffect(() => {
     if (conversationRef.current) {
       conversationRef.current.scrollTop = conversationRef.current.scrollHeight;
     }
   }, [conversation]);
+
+  const speakText = (text: string) => {
+    if ('speechSynthesis' in window) {
+      // Stop any current speech
+      speechSynthesis.cancel();
+      
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.9;
+      utterance.pitch = 1;
+      utterance.volume = 0.8;
+      
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+      
+      currentUtterance.current = utterance;
+      speechSynthesis.speak(utterance);
+    }
+  };
+
+  const stopSpeaking = () => {
+    if ('speechSynthesis' in window) {
+      speechSynthesis.cancel();
+      setIsSpeaking(false);
+    }
+  };
 
   const startConversation = async (topic: string) => {
     setSelectedTopic(topic);
@@ -64,6 +100,11 @@ export const ConversationPractice = () => {
       const aiMessage = { role: 'ai' as const, message: aiResponse, timestamp: new Date() };
       setConversation([aiMessage]);
       setConversationHistory([{ role: 'model', parts: [{ text: aiResponse }] }]);
+      
+      // Speak the AI response automatically
+      if (isSpeechMode) {
+        speakText(aiResponse);
+      }
     } catch (error) {
       console.error('Error starting conversation:', error);
     }
@@ -81,24 +122,27 @@ export const ConversationPractice = () => {
       recognition.current.stop();
       setIsListening(false);
     } else {
+      // Stop any current speech before listening
+      stopSpeaking();
       recognition.current.start();
       setIsListening(true);
     }
   };
 
-  const sendMessage = async () => {
-    if (!currentMessage.trim() || isLoading) return;
+  const handleSendMessage = async (messageText?: string) => {
+    const messageToSend = messageText || currentMessage;
+    if (!messageToSend.trim() || isLoading) return;
 
-    const userMessage = { role: 'user' as const, message: currentMessage, timestamp: new Date() };
+    const userMessage = { role: 'user' as const, message: messageToSend, timestamp: new Date() };
     setConversation(prev => [...prev, userMessage]);
     
-    const newHistory = [...conversationHistory, { role: 'user' as const, parts: [{ text: currentMessage }] }];
+    const newHistory = [...conversationHistory, { role: 'user' as const, parts: [{ text: messageToSend }] }];
     setConversationHistory(newHistory);
     
     setIsLoading(true);
     
     try {
-      const result = await GeminiService.continueConversation(currentMessage, conversationHistory);
+      const result = await GeminiService.continueConversation(messageToSend, conversationHistory);
       const aiMessage = { role: 'ai' as const, message: result.response, timestamp: new Date() };
       
       setConversation(prev => [...prev, aiMessage]);
@@ -106,11 +150,8 @@ export const ConversationPractice = () => {
       setFeedback(result.feedback || null);
       
       // Speak the AI response
-      if ('speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance(result.response);
-        utterance.rate = 0.8;
-        utterance.pitch = 1;
-        speechSynthesis.speak(utterance);
+      if (isSpeechMode) {
+        speakText(result.response);
       }
     } catch (error) {
       console.error('Error sending message:', error);
@@ -123,7 +164,7 @@ export const ConversationPractice = () => {
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      sendMessage();
+      handleSendMessage();
     }
   };
 
@@ -131,9 +172,33 @@ export const ConversationPractice = () => {
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <Card className="bg-white dark:bg-navy-800 border-sage-200 dark:border-navy-600">
         <CardHeader>
-          <CardTitle className="text-sage-900 dark:text-sage-100 flex items-center gap-2">
-            <MessageCircle className="w-6 h-6" />
-            Conversation Practice
+          <CardTitle className="text-sage-900 dark:text-sage-100 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MessageCircle className="w-6 h-6" />
+              Conversation Practice
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => setIsSpeechMode(!isSpeechMode)}
+                variant="outline"
+                size="sm"
+                className={`border-sage-300 dark:border-sage-600 ${
+                  isSpeechMode ? 'bg-sage-100 dark:bg-sage-800' : ''
+                }`}
+              >
+                {isSpeechMode ? 'Speech Mode' : 'Text Mode'}
+              </Button>
+              {isSpeaking && (
+                <Button
+                  onClick={stopSpeaking}
+                  variant="outline"
+                  size="sm"
+                  className="border-red-300 text-red-600 hover:bg-red-50"
+                >
+                  <VolumeX className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -168,6 +233,7 @@ export const ConversationPractice = () => {
                     setConversation([]);
                     setConversationHistory([]);
                     setFeedback(null);
+                    stopSpeaking();
                   }}
                   variant="outline"
                   size="sm"
@@ -213,34 +279,39 @@ export const ConversationPractice = () => {
                 )}
               </div>
 
-              <div className="flex gap-2">
-                <Input
-                  value={currentMessage}
-                  onChange={(e) => setCurrentMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Type your message or use voice..."
-                  className="flex-1 border-sage-300 dark:border-sage-600"
-                  disabled={isLoading}
-                />
-                <Button
-                  onClick={toggleListening}
-                  variant="outline"
-                  size="icon"
-                  className={`border-sage-300 dark:border-sage-600 ${
-                    isListening ? 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400' : 'text-sage-700 dark:text-sage-300'
-                  }`}
-                  disabled={isLoading}
-                >
-                  {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                </Button>
-                <Button
-                  onClick={sendMessage}
-                  disabled={!currentMessage.trim() || isLoading}
-                  className="bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700 text-white"
-                >
-                  <Send className="w-4 h-4" />
-                </Button>
-              </div>
+              {isSpeechMode ? (
+                <div className="flex justify-center">
+                  <Button
+                    onClick={toggleListening}
+                    disabled={isLoading || isSpeaking}
+                    className={`w-20 h-20 rounded-full ${
+                      isListening 
+                        ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
+                        : 'bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700'
+                    } text-white`}
+                  >
+                    {isListening ? <MicOff className="w-8 h-8" /> : <Mic className="w-8 h-8" />}
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    value={currentMessage}
+                    onChange={(e) => setCurrentMessage(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Type your message..."
+                    className="flex-1 border-sage-300 dark:border-sage-600"
+                    disabled={isLoading}
+                  />
+                  <Button
+                    onClick={() => handleSendMessage()}
+                    disabled={!currentMessage.trim() || isLoading}
+                    className="bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700 text-white"
+                  >
+                    <Send className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
 
               {feedback && (
                 <Card className="bg-cream-50 dark:bg-navy-700 border-sage-200 dark:border-navy-600">
