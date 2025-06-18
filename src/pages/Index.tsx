@@ -3,7 +3,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Mic, MessageCircle, Users, Play, ArrowRight, CheckCircle, Star } from "lucide-react";
+import { HeroVoiceInteraction } from "@/components/HeroVoiceInteraction";
+import { MessageCircle, Users, Play, ArrowRight, CheckCircle, Star } from "lucide-react";
 import { useState } from "react";
 
 const Index = () => {
@@ -12,7 +13,6 @@ const Index = () => {
   const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Email submitted:", email);
-    // Handle email submission logic here
     setEmail("");
   };
 
@@ -89,17 +89,7 @@ const Index = () => {
               </div>
             </div>
             <div className="relative">
-              <div className="relative bg-white dark:bg-navy-800 rounded-2xl p-8 shadow-2xl border border-sage-200 dark:border-navy-700">
-                <div className="flex items-center justify-center w-full h-64 bg-sage-50 dark:bg-navy-700 rounded-xl">
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-sage-600 dark:bg-sage-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Mic className="w-8 h-8 text-white" />
-                    </div>
-                    <p className="text-sage-700 dark:text-sage-300 font-semibold">AI Assistant Ready</p>
-                    <p className="text-sage-500 dark:text-sage-400 text-sm mt-2">Premium conversation experience</p>
-                  </div>
-                </div>
-              </div>
+              <HeroVoiceInteraction />
             </div>
           </div>
         </div>
@@ -144,7 +134,7 @@ const Index = () => {
                 step: "I", 
                 title: "Initiate Dialogue", 
                 description: "Begin with a touch of sophistication—select your conversation topic with discerning taste",
-                icon: <Mic className="w-12 h-12" />
+                icon: <MessageCircle className="w-12 h-12" />
               },
               { 
                 step: "II", 
