@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -126,52 +125,58 @@ export const HeroVoiceInteraction = () => {
   };
 
   return (
-    <div className="relative">
-      <Card className="bg-white dark:bg-navy-800 rounded-2xl p-8 shadow-2xl border border-sage-200 dark:border-navy-700">
-        <CardContent className="space-y-6">
+    <div className="relative w-full max-w-md mx-auto">
+      <Card className="bg-white dark:bg-navy-800 rounded-xl p-4 sm:p-6 shadow-xl border border-sage-200 dark:border-navy-700">
+        <CardContent className="space-y-4 sm:space-y-6 p-0">
           {/* Voice Selection */}
           <div className="text-center">
-            <h3 className="text-lg font-semibold text-sage-900 dark:text-sage-100 mb-4">
+            <h3 className="text-base sm:text-lg font-semibold text-sage-900 dark:text-sage-100 mb-3 sm:mb-4">
               Choose Your AI Assistant Voice
             </h3>
             <RadioGroup 
               value={selectedVoice} 
               onValueChange={(value) => setSelectedVoice(value as 'female' | 'male')}
-              className="flex justify-center gap-8"
+              className="flex justify-center gap-4 sm:gap-6"
             >
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="female" id="female" />
-                <Label htmlFor="female" className="flex items-center gap-2 text-sage-700 dark:text-sage-300 cursor-pointer">
-                  <User className="w-4 h-4" />
-                  Female Voice
+                <RadioGroupItem value="female" id="female" className="border-sage-400 text-sage-600" />
+                <Label htmlFor="female" className="flex items-center gap-2 text-sage-700 dark:text-sage-300 cursor-pointer text-sm sm:text-base">
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 bg-pink-100 dark:bg-pink-900 rounded-full flex items-center justify-center">
+                    <span className="text-pink-600 dark:text-pink-400 text-xs sm:text-sm">♀</span>
+                  </div>
+                  <span className="hidden sm:inline">Female Voice</span>
+                  <span className="sm:hidden">Female</span>
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="male" id="male" />
-                <Label htmlFor="male" className="flex items-center gap-2 text-sage-700 dark:text-sage-300 cursor-pointer">
-                  <Users className="w-4 h-4" />
-                  Male Voice
+                <RadioGroupItem value="male" id="male" className="border-sage-400 text-sage-600" />
+                <Label htmlFor="male" className="flex items-center gap-2 text-sage-700 dark:text-sage-300 cursor-pointer text-sm sm:text-base">
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                    <span className="text-blue-600 dark:text-blue-400 text-xs sm:text-sm">♂</span>
+                  </div>
+                  <span className="hidden sm:inline">Male Voice</span>
+                  <span className="sm:hidden">Male</span>
                 </Label>
               </div>
             </RadioGroup>
           </div>
 
           {/* Main Interaction Area */}
-          <div className="flex flex-col items-center space-y-4">
+          <div className="flex flex-col items-center space-y-3 sm:space-y-4">
             <div className="relative">
               <Button
                 onClick={toggleListening}
                 disabled={isProcessing || isSpeaking}
-                className={`w-32 h-32 rounded-full transition-all duration-300 ${
+                className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full transition-all duration-300 ${
                   isListening 
                     ? 'bg-red-500 hover:bg-red-600 animate-pulse scale-110' 
                     : 'bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700 hover:scale-105'
                 } text-white shadow-lg`}
               >
                 {isListening ? (
-                  <MicOff className="w-12 h-12" />
+                  <MicOff className="w-8 h-8 sm:w-10 sm:h-10" />
                 ) : (
-                  <Mic className="w-12 h-12" />
+                  <Mic className="w-8 h-8 sm:w-10 sm:h-10" />
                 )}
               </Button>
               
@@ -179,43 +184,47 @@ export const HeroVoiceInteraction = () => {
               {isListening && (
                 <div className="absolute inset-0 rounded-full">
                   <div className="absolute inset-0 rounded-full border-4 border-red-300 animate-ping"></div>
-                  <div className="absolute inset-4 rounded-full border-2 border-red-400 animate-ping" style={{ animationDelay: '0.5s' }}></div>
+                  <div className="absolute inset-2 rounded-full border-2 border-red-400 animate-ping" style={{ animationDelay: '0.5s' }}></div>
                 </div>
               )}
             </div>
 
             {/* Status Display */}
-            <div className="text-center min-h-[60px] flex flex-col justify-center">
+            <div className="text-center min-h-[40px] sm:min-h-[50px] flex flex-col justify-center">
               {isProcessing && (
                 <div className="flex items-center justify-center gap-2">
-                  <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                  <span className="ml-2 text-sage-600 dark:text-sage-400">Processing...</span>
+                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-sage-400 rounded-full animate-bounce"></div>
+                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-sage-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-sage-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  <span className="ml-2 text-sage-600 dark:text-sage-400 text-sm sm:text-base">Processing...</span>
                 </div>
               )}
               
               {isSpeaking && (
                 <div className="flex items-center justify-center gap-2">
-                  <Volume2 className="w-4 h-4 text-sage-600 dark:text-sage-400 animate-pulse" />
-                  <span className="text-sage-600 dark:text-sage-400">AI is speaking...</span>
+                  <Volume2 className="w-3 h-3 sm:w-4 sm:h-4 text-sage-600 dark:text-sage-400 animate-pulse" />
+                  <span className="text-sage-600 dark:text-sage-400 text-sm sm:text-base">AI is speaking...</span>
                   <Button
                     onClick={stopSpeaking}
                     variant="outline"
                     size="sm"
-                    className="ml-2 border-red-300 text-red-600 hover:bg-red-50"
+                    className="ml-2 border-red-300 text-red-600 hover:bg-red-50 h-6 px-2 text-xs"
                   >
-                    <VolumeX className="w-3 h-3" />
+                    <VolumeX className="w-2 h-2 sm:w-3 sm:h-3" />
                   </Button>
                 </div>
               )}
               
               {!isListening && !isProcessing && !isSpeaking && (
                 <div className="text-center">
-                  <Badge className="bg-sage-100 dark:bg-sage-800 text-sage-700 dark:text-sage-300 mb-2">
-                    {selectedVoice === 'female' ? 'Female' : 'Male'} Assistant Ready
+                  <Badge className={`mb-2 text-xs sm:text-sm ${
+                    selectedVoice === 'female' 
+                      ? 'bg-pink-100 dark:bg-pink-900 text-pink-700 dark:text-pink-300' 
+                      : 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                  }`}>
+                    {selectedVoice === 'female' ? '♀ Female' : '♂ Male'} Assistant Ready
                   </Badge>
-                  <p className="text-sage-600 dark:text-sage-400 text-sm">
+                  <p className="text-sage-600 dark:text-sage-400 text-xs sm:text-sm">
                     Click the microphone to start speaking
                   </p>
                 </div>
@@ -224,8 +233,8 @@ export const HeroVoiceInteraction = () => {
 
             {/* Last Message Display */}
             {lastMessage && (
-              <div className="w-full max-w-md p-4 bg-sage-50 dark:bg-navy-700 rounded-lg border border-sage-200 dark:border-navy-600">
-                <p className="text-sm text-sage-700 dark:text-sage-300 text-center animate-fade-in">
+              <div className="w-full p-3 sm:p-4 bg-sage-50 dark:bg-navy-700 rounded-lg border border-sage-200 dark:border-navy-600">
+                <p className="text-xs sm:text-sm text-sage-700 dark:text-sage-300 text-center animate-fade-in break-words">
                   {lastMessage}
                 </p>
               </div>

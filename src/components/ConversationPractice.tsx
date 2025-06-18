@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -169,20 +168,20 @@ export const ConversationPractice = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
+    <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
       <Card className="bg-white dark:bg-navy-800 border-sage-200 dark:border-navy-600">
-        <CardHeader>
-          <CardTitle className="text-sage-900 dark:text-sage-100 flex items-center justify-between">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-sage-900 dark:text-sage-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <MessageCircle className="w-6 h-6" />
-              Conversation Practice
+              <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" />
+              <span className="text-lg sm:text-xl">Conversation Practice</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 onClick={() => setIsSpeechMode(!isSpeechMode)}
                 variant="outline"
                 size="sm"
-                className={`border-sage-300 dark:border-sage-600 ${
+                className={`border-sage-300 dark:border-sage-600 text-xs sm:text-sm ${
                   isSpeechMode ? 'bg-sage-100 dark:bg-sage-800' : ''
                 }`}
               >
@@ -193,9 +192,9 @@ export const ConversationPractice = () => {
                   onClick={stopSpeaking}
                   variant="outline"
                   size="sm"
-                  className="border-red-300 text-red-600 hover:bg-red-50"
+                  className="border-red-300 text-red-600 hover:bg-red-50 text-xs sm:text-sm"
                 >
-                  <VolumeX className="w-4 h-4" />
+                  <VolumeX className="w-3 h-3 sm:w-4 sm:h-4" />
                 </Button>
               )}
             </div>
@@ -204,16 +203,16 @@ export const ConversationPractice = () => {
         <CardContent className="space-y-4">
           {!selectedTopic ? (
             <div>
-              <h3 className="text-lg font-semibold text-sage-800 dark:text-sage-200 mb-3">
+              <h3 className="text-base sm:text-lg font-semibold text-sage-800 dark:text-sage-200 mb-3">
                 Choose a conversation topic:
               </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
                 {topics.map((topic) => (
                   <Button
                     key={topic}
                     onClick={() => startConversation(topic)}
                     variant="outline"
-                    className="border-sage-300 dark:border-sage-600 text-sage-700 dark:text-sage-300 hover:bg-sage-50 dark:hover:bg-sage-800"
+                    className="border-sage-300 dark:border-sage-600 text-sage-700 dark:text-sage-300 hover:bg-sage-50 dark:hover:bg-sage-800 text-xs sm:text-sm p-2 sm:p-3 h-auto"
                     disabled={isLoading}
                   >
                     {topic}
@@ -223,8 +222,8 @@ export const ConversationPractice = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Badge className="bg-sage-100 dark:bg-sage-800 text-sage-700 dark:text-sage-300">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <Badge className="bg-sage-100 dark:bg-sage-800 text-sage-700 dark:text-sage-300 text-xs sm:text-sm">
                   Topic: {selectedTopic}
                 </Badge>
                 <Button
@@ -237,7 +236,7 @@ export const ConversationPractice = () => {
                   }}
                   variant="outline"
                   size="sm"
-                  className="border-sage-300 dark:border-sage-600 text-sage-700 dark:text-sage-300"
+                  className="border-sage-300 dark:border-sage-600 text-sage-700 dark:text-sage-300 text-xs sm:text-sm"
                 >
                   Change Topic
                 </Button>
@@ -245,7 +244,7 @@ export const ConversationPractice = () => {
 
               <div 
                 ref={conversationRef}
-                className="h-80 bg-sage-50 dark:bg-navy-700 rounded-lg p-4 overflow-y-auto space-y-3 border border-sage-200 dark:border-navy-600"
+                className="h-60 sm:h-80 bg-sage-50 dark:bg-navy-700 rounded-lg p-3 sm:p-4 overflow-y-auto space-y-3 border border-sage-200 dark:border-navy-600"
               >
                 {conversation.map((msg, index) => (
                   <div
@@ -253,14 +252,14 @@ export const ConversationPractice = () => {
                     className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                      className={`max-w-[85%] sm:max-w-xs lg:max-w-md px-3 sm:px-4 py-2 rounded-lg ${
                         msg.role === 'user'
                           ? 'bg-sage-600 dark:bg-sage-500 text-white'
                           : 'bg-white dark:bg-navy-800 text-sage-900 dark:text-sage-100 border border-sage-200 dark:border-navy-600'
                       }`}
                     >
-                      <p className="text-sm">{msg.message}</p>
-                      <span className="text-xs opacity-70">
+                      <p className="text-xs sm:text-sm break-words">{msg.message}</p>
+                      <span className="text-xs opacity-70 block mt-1">
                         {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
@@ -268,11 +267,11 @@ export const ConversationPractice = () => {
                 ))}
                 {isLoading && (
                   <div className="flex justify-start">
-                    <div className="bg-white dark:bg-navy-800 border border-sage-200 dark:border-navy-600 rounded-lg px-4 py-2 max-w-xs">
+                    <div className="bg-white dark:bg-navy-800 border border-sage-200 dark:border-navy-600 rounded-lg px-3 sm:px-4 py-2 max-w-xs">
                       <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                        <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                        <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-sage-400 rounded-full animate-bounce"></div>
+                        <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-sage-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                        <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-sage-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                       </div>
                     </div>
                   </div>
@@ -284,13 +283,13 @@ export const ConversationPractice = () => {
                   <Button
                     onClick={toggleListening}
                     disabled={isLoading || isSpeaking}
-                    className={`w-20 h-20 rounded-full ${
+                    className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full ${
                       isListening 
                         ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
                         : 'bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700'
                     } text-white`}
                   >
-                    {isListening ? <MicOff className="w-8 h-8" /> : <Mic className="w-8 h-8" />}
+                    {isListening ? <MicOff className="w-6 h-6 sm:w-8 sm:h-8" /> : <Mic className="w-6 h-6 sm:w-8 sm:h-8" />}
                   </Button>
                 </div>
               ) : (
@@ -300,13 +299,13 @@ export const ConversationPractice = () => {
                     onChange={(e) => setCurrentMessage(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="Type your message..."
-                    className="flex-1 border-sage-300 dark:border-sage-600"
+                    className="flex-1 border-sage-300 dark:border-sage-600 text-sm sm:text-base"
                     disabled={isLoading}
                   />
                   <Button
                     onClick={() => handleSendMessage()}
                     disabled={!currentMessage.trim() || isLoading}
-                    className="bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700 text-white"
+                    className="bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700 text-white px-3 sm:px-4"
                   >
                     <Send className="w-4 h-4" />
                   </Button>
@@ -315,12 +314,12 @@ export const ConversationPractice = () => {
 
               {feedback && (
                 <Card className="bg-cream-50 dark:bg-navy-700 border-sage-200 dark:border-navy-600">
-                  <CardContent className="p-4">
-                    <h4 className="font-semibold text-sage-800 dark:text-sage-200 mb-2 flex items-center gap-2">
-                      <Volume2 className="w-4 h-4" />
+                  <CardContent className="p-3 sm:p-4">
+                    <h4 className="font-semibold text-sage-800 dark:text-sage-200 mb-2 flex items-center gap-2 text-sm sm:text-base">
+                      <Volume2 className="w-3 h-3 sm:w-4 sm:h-4" />
                       AI Feedback
                     </h4>
-                    <div className="space-y-2 text-sm">
+                    <div className="space-y-2 text-xs sm:text-sm">
                       <div><strong>Grammar:</strong> {feedback.grammar}</div>
                       <div><strong>Pronunciation:</strong> {feedback.pronunciation}</div>
                       <div><strong>Fluency:</strong> {feedback.fluency}</div>
