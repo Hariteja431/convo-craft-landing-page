@@ -128,39 +128,6 @@ export const HeroVoiceInteraction = () => {
     <div className="relative w-full max-w-md mx-auto">
       <Card className="bg-white dark:bg-navy-800 rounded-xl p-4 sm:p-6 shadow-xl border border-sage-200 dark:border-navy-700">
         <CardContent className="space-y-4 sm:space-y-6 p-0">
-          {/* Voice Selection */}
-          <div className="text-center">
-            <h3 className="text-base sm:text-lg font-semibold text-sage-900 dark:text-sage-100 mb-3 sm:mb-4">
-              Choose Your AI Assistant Voice
-            </h3>
-            <RadioGroup 
-              value={selectedVoice} 
-              onValueChange={(value) => setSelectedVoice(value as 'female' | 'male')}
-              className="flex justify-center gap-4 sm:gap-6"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="female" id="female" className="border-sage-400 text-sage-600" />
-                <Label htmlFor="female" className="flex items-center gap-2 text-sage-700 dark:text-sage-300 cursor-pointer text-sm sm:text-base">
-                  <div className="w-6 h-6 sm:w-7 sm:h-7 bg-pink-100 dark:bg-pink-900 rounded-full flex items-center justify-center">
-                    <span className="text-pink-600 dark:text-pink-400 text-xs sm:text-sm">♀</span>
-                  </div>
-                  <span className="hidden sm:inline">Female Voice</span>
-                  <span className="sm:hidden">Female</span>
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="male" id="male" className="border-sage-400 text-sage-600" />
-                <Label htmlFor="male" className="flex items-center gap-2 text-sage-700 dark:text-sage-300 cursor-pointer text-sm sm:text-base">
-                  <div className="w-6 h-6 sm:w-7 sm:h-7 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                    <span className="text-blue-600 dark:text-blue-400 text-xs sm:text-sm">♂</span>
-                  </div>
-                  <span className="hidden sm:inline">Male Voice</span>
-                  <span className="sm:hidden">Male</span>
-                </Label>
-              </div>
-            </RadioGroup>
-          </div>
-
           {/* Main Interaction Area */}
           <div className="flex flex-col items-center space-y-3 sm:space-y-4">
             <div className="relative">
@@ -217,13 +184,6 @@ export const HeroVoiceInteraction = () => {
               
               {!isListening && !isProcessing && !isSpeaking && (
                 <div className="text-center">
-                  <Badge className={`mb-2 text-xs sm:text-sm ${
-                    selectedVoice === 'female' 
-                      ? 'bg-pink-100 dark:bg-pink-900 text-pink-700 dark:text-pink-300' 
-                      : 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-                  }`}>
-                    {selectedVoice === 'female' ? '♀ Female' : '♂ Male'} Assistant Ready
-                  </Badge>
                   <p className="text-sage-600 dark:text-sage-400 text-xs sm:text-sm">
                     Click the microphone to start speaking
                   </p>
@@ -239,6 +199,39 @@ export const HeroVoiceInteraction = () => {
                 </p>
               </div>
             )}
+          </div>
+
+          {/* Voice Selection */}
+          <div className="text-center">
+            <h3 className="text-base sm:text-lg font-semibold text-sage-900 dark:text-sage-100 mb-3 sm:mb-4">
+              Choose Your AI Assistant Voice
+            </h3>
+            <RadioGroup 
+              value={selectedVoice} 
+              onValueChange={(value) => setSelectedVoice(value as 'female' | 'male')}
+              className="flex justify-center gap-4 sm:gap-6"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="female" id="female" className="border-sage-400 text-sage-600" />
+                <Label htmlFor="female" className="flex items-center gap-2 text-sage-700 dark:text-sage-300 cursor-pointer text-sm sm:text-base">
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 bg-pink-100 dark:bg-pink-900 rounded-full flex items-center justify-center">
+                    <span className="text-pink-600 dark:text-pink-400 text-xs sm:text-sm">♀</span>
+                  </div>
+                  <span className="hidden sm:inline">Female Voice</span>
+                  <span className="sm:hidden">Female</span>
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="male" id="male" className="border-sage-400 text-sage-600" />
+                <Label htmlFor="male" className="flex items-center gap-2 text-sage-700 dark:text-sage-300 cursor-pointer text-sm sm:text-base">
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                    <span className="text-blue-600 dark:text-blue-400 text-xs sm:text-sm">♂</span>
+                  </div>
+                  <span className="hidden sm:inline">Male Voice</span>
+                  <span className="sm:hidden">Male</span>
+                </Label>
+              </div>
+            </RadioGroup>
           </div>
         </CardContent>
       </Card>

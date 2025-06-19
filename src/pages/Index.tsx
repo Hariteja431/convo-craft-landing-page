@@ -134,7 +134,7 @@ const Index = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8">
+      <section className="relative overflow-hidden py-8 sm:py-12 lg:py-16 xl:py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             <div className="text-center lg:text-left order-2 lg:order-1">
@@ -142,13 +142,13 @@ const Index = () => {
                 <Star className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                 AI-Powered Language Learning
               </Badge>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-sage-900 dark:text-sage-100 mb-4 sm:mb-6 leading-tight">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-sage-900 dark:text-sage-100 mb-4 sm:mb-6 leading-tight">
                 Speak Fluently.{" "}
                 <span className="text-sage-700 dark:text-sage-300">
                   Practice Confidently.
                 </span>
               </h1>
-              <p className="text-base sm:text-lg lg:text-xl text-sage-600 dark:text-sage-400 mb-6 sm:mb-8 leading-relaxed">
+              <p className="text-sm sm:text-base lg:text-lg xl:text-xl text-sage-600 dark:text-sage-400 mb-6 sm:mb-8 leading-relaxed">
                 Your sophisticated AI conversation partner. Master fluency with elegance, 
                 refine your accent with precision, and build unshakeable confidence in any language.
               </p>
@@ -157,7 +157,7 @@ const Index = () => {
                   <Link to="/practice">
                     <Button 
                       size="lg" 
-                      className="w-full sm:w-auto bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700 text-white px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg"
+                      className="w-full sm:w-auto bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700 text-white px-4 sm:px-6 lg:px-8 py-3 sm:py-4 lg:py-6 text-sm sm:text-base lg:text-lg"
                     >
                       <Play className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                       Begin Your Journey
@@ -168,7 +168,7 @@ const Index = () => {
                   <SignInButton mode="modal">
                     <Button 
                       size="lg" 
-                      className="w-full sm:w-auto bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700 text-white px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg"
+                      className="w-full sm:w-auto bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700 text-white px-4 sm:px-6 lg:px-8 py-3 sm:py-4 lg:py-6 text-sm sm:text-base lg:text-lg"
                     >
                       <Play className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                       Begin Your Journey
@@ -180,7 +180,7 @@ const Index = () => {
                     <Button 
                       variant="outline" 
                       size="lg"
-                      className="w-full sm:w-auto border-2 border-sage-300 dark:border-sage-600 text-sage-700 dark:text-sage-300 hover:bg-sage-50 dark:hover:bg-sage-800 px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg"
+                      className="w-full sm:w-auto border-2 border-sage-300 dark:border-sage-600 text-sage-700 dark:text-sage-300 hover:bg-sage-50 dark:hover:bg-sage-800 px-4 sm:px-6 lg:px-8 py-3 sm:py-4 lg:py-6 text-sm sm:text-base lg:text-lg"
                     >
                       Experience Demo
                     </Button>
@@ -191,7 +191,7 @@ const Index = () => {
                     <Button 
                       variant="outline" 
                       size="lg"
-                      className="w-full sm:w-auto border-2 border-sage-300 dark:border-sage-600 text-sage-700 dark:text-sage-300 hover:bg-sage-50 dark:hover:bg-sage-800 px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg"
+                      className="w-full sm:w-auto border-2 border-sage-300 dark:border-sage-600 text-sage-700 dark:text-sage-300 hover:bg-sage-50 dark:hover:bg-sage-800 px-4 sm:px-6 lg:px-8 py-3 sm:py-4 lg:py-6 text-sm sm:text-base lg:text-lg"
                     >
                       Experience Demo
                     </Button>
@@ -207,13 +207,13 @@ const Index = () => {
       </section>
 
       {/* Who It's For Section */}
-      <section id="features" className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-navy-800">
+      <section id="features" className="py-8 sm:py-12 lg:py-16 xl:py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-navy-800">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12 sm:mb-16">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-sage-900 dark:text-sage-100 mb-4">Distinguished Clientele</h2>
-            <p className="text-lg sm:text-xl text-sage-600 dark:text-sage-400">Elevating communication excellence across professions</p>
+          <div className="text-center mb-8 sm:mb-12 lg:mb-16">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-sage-900 dark:text-sage-100 mb-4">Distinguished Clientele</h2>
+            <p className="text-base sm:text-lg lg:text-xl text-sage-600 dark:text-sage-400">Elevating communication excellence across professions</p>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
             {[
               { title: "Scholars", description: "Master presentations with aristocratic poise", icon: "🎓", accent: "sage" },
               { title: "Executives", description: "Command boardrooms with eloquent confidence", icon: "💼", accent: "stone" },
@@ -221,10 +221,10 @@ const Index = () => {
               { title: "Connoisseurs", description: "Appreciate linguistic nuance and cultural depth", icon: "🌍", accent: "cream" }
             ].map((item, index) => (
               <Card key={index} className="bg-cream-50 dark:bg-navy-700 border-sage-200 dark:border-navy-600 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                <CardContent className="p-6 sm:p-8 text-center">
-                  <div className="text-3xl sm:text-4xl mb-4">{item.icon}</div>
-                  <h3 className="text-lg sm:text-xl font-semibold text-sage-900 dark:text-sage-100 mb-3">{item.title}</h3>
-                  <p className="text-sm sm:text-base text-sage-600 dark:text-sage-400">{item.description}</p>
+                <CardContent className="p-4 sm:p-6 lg:p-8 text-center">
+                  <div className="text-2xl sm:text-3xl lg:text-4xl mb-3 sm:mb-4">{item.icon}</div>
+                  <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-sage-900 dark:text-sage-100 mb-2 sm:mb-3">{item.title}</h3>
+                  <p className="text-xs sm:text-sm lg:text-base text-sage-600 dark:text-sage-400">{item.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -233,44 +233,44 @@ const Index = () => {
       </section>
 
       {/* How It Works Section */}
-      <section id="how-it-works" className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8 bg-sage-50 dark:bg-navy-900">
+      <section id="how-it-works" className="py-8 sm:py-12 lg:py-16 xl:py-20 px-4 sm:px-6 lg:px-8 bg-sage-50 dark:bg-navy-900">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12 sm:mb-16">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-sage-900 dark:text-sage-100 mb-4">The Refined Process</h2>
-            <p className="text-lg sm:text-xl text-sage-600 dark:text-sage-400">Three elegant steps to linguistic mastery</p>
+          <div className="text-center mb-8 sm:mb-12 lg:mb-16">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-sage-900 dark:text-sage-100 mb-4">The Refined Process</h2>
+            <p className="text-base sm:text-lg lg:text-xl text-sage-600 dark:text-sage-400">Three elegant steps to linguistic mastery</p>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-12">
             {[
               { 
                 step: "I", 
                 title: "Initiate Dialogue", 
                 description: "Begin with a touch of sophistication—select your conversation topic with discerning taste",
-                icon: <MessageCircle className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12" />
+                icon: <MessageCircle className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 xl:w-12 xl:h-12" />
               },
               { 
                 step: "II", 
                 title: "Engage Eloquently", 
                 description: "Converse naturally with our refined AI, practicing the art of articulate expression",
-                icon: <MessageCircle className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12" />
+                icon: <MessageCircle className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 xl:w-12 xl:h-12" />
               },
               { 
                 step: "III", 
                 title: "Receive Refinement", 
                 description: "Obtain sophisticated feedback on pronunciation, grammar, and cultural nuance",
-                icon: <CheckCircle className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12" />
+                icon: <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 xl:w-12 xl:h-12" />
               }
             ].map((item, index) => (
               <div key={index} className="text-center">
-                <div className="relative mb-6 sm:mb-8">
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 bg-sage-600 dark:bg-sage-500 text-white rounded-full flex items-center justify-center mx-auto shadow-lg">
+                <div className="relative mb-4 sm:mb-6 lg:mb-8">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-sage-600 dark:bg-sage-500 text-white rounded-full flex items-center justify-center mx-auto shadow-lg">
                     {item.icon}
                   </div>
-                  <div className="absolute -top-2 -right-2 w-6 h-6 sm:w-8 sm:h-8 bg-cream-100 dark:bg-navy-700 border-2 border-sage-300 dark:border-sage-600 rounded-full flex items-center justify-center text-sage-700 dark:text-sage-300 font-bold shadow-md text-xs sm:text-sm">
+                  <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 bg-cream-100 dark:bg-navy-700 border-2 border-sage-300 dark:border-sage-600 rounded-full flex items-center justify-center text-sage-700 dark:text-sage-300 font-bold shadow-md text-xs sm:text-sm">
                     {item.step}
                   </div>
                 </div>
-                <h3 className="text-xl sm:text-2xl font-semibold text-sage-900 dark:text-sage-100 mb-4">{item.title}</h3>
-                <p className="text-sage-600 dark:text-sage-400 text-base sm:text-lg leading-relaxed">{item.description}</p>
+                <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-sage-900 dark:text-sage-100 mb-3 sm:mb-4">{item.title}</h3>
+                <p className="text-sage-600 dark:text-sage-400 text-sm sm:text-base lg:text-lg leading-relaxed">{item.description}</p>
               </div>
             ))}
           </div>
@@ -278,13 +278,13 @@ const Index = () => {
       </section>
 
       {/* Benefits Section */}
-      <section className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-navy-800">
+      <section className="py-8 sm:py-12 lg:py-16 xl:py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-navy-800">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12 sm:mb-16">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-sage-900 dark:text-sage-100 mb-4">The ConvoCraft Advantage</h2>
-            <p className="text-lg sm:text-xl text-sage-600 dark:text-sage-400">Cultivating excellence in every conversation</p>
+          <div className="text-center mb-8 sm:mb-12 lg:mb-16">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-sage-900 dark:text-sage-100 mb-4">The ConvoCraft Advantage</h2>
+            <p className="text-base sm:text-lg lg:text-xl text-sage-600 dark:text-sage-400">Cultivating excellence in every conversation</p>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
             {[
               { title: "Speak with Poise", description: "Practice in an environment of refined discretion", emoji: "🎭" },
               { title: "Cultivate Fluency", description: "Develop natural eloquence through deliberate practice", emoji: "📚" },
@@ -292,10 +292,10 @@ const Index = () => {
               { title: "Timeless Access", description: "Excellence available at your distinguished convenience", emoji: "⌚" }
             ].map((benefit, index) => (
               <Card key={index} className="bg-cream-50 dark:bg-navy-700 border-sage-200 dark:border-navy-600 hover:shadow-xl transition-all duration-300">
-                <CardContent className="p-4 sm:p-6 text-center">
-                  <div className="text-3xl sm:text-4xl lg:text-5xl mb-4">{benefit.emoji}</div>
-                  <h3 className="text-base sm:text-lg font-semibold text-sage-900 dark:text-sage-100 mb-2">{benefit.title}</h3>
-                  <p className="text-sage-600 dark:text-sage-400 text-sm">{benefit.description}</p>
+                <CardContent className="p-3 sm:p-4 lg:p-6 text-center">
+                  <div className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl mb-3 sm:mb-4">{benefit.emoji}</div>
+                  <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-sage-900 dark:text-sage-100 mb-2">{benefit.title}</h3>
+                  <p className="text-sage-600 dark:text-sage-400 text-xs sm:text-sm">{benefit.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -304,55 +304,60 @@ const Index = () => {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8 bg-sage-50 dark:bg-navy-900">
+      <section id="pricing" className="py-8 sm:py-12 lg:py-16 xl:py-20 px-4 sm:px-6 lg:px-8 bg-sage-50 dark:bg-navy-900">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12 sm:mb-16">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-sage-900 dark:text-sage-100 mb-4">Investment in Excellence</h2>
-            <p className="text-lg sm:text-xl text-sage-600 dark:text-sage-400">Choose the membership that suits your distinguished needs</p>
+          <div className="text-center mb-8 sm:mb-12 lg:mb-16">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-sage-900 dark:text-sage-100 mb-4">Investment in Excellence</h2>
+            <p className="text-base sm:text-lg lg:text-xl text-sage-600 dark:text-sage-400">Choose the membership that suits your distinguished needs</p>
           </div>
-          <div className="grid md:grid-cols-3 gap-6 sm:gap-8 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto">
             {[
               {
-                name: "Apprentice",
-                price: "Complimentary",
+                name: "Free Plan",
+                price: "₹0/month",
                 description: "Begin your journey with tasteful introduction",
-                features: ["5 refined conversations monthly", "Essential feedback", "English mastery focus"]
+                features: [
+                  "1 AI voice conversation per day (5 min limit)",
+                  "Fluency & pronunciation feedback",
+                  "Community support"
+                ]
               },
               {
-                name: "Connoisseur",
-                price: "$9.99/month",
+                name: "Pro Plan",
+                price: "₹249/month",
                 description: "For the discerning language enthusiast",
-                features: ["Unlimited sophisticated dialogues", "Advanced AI mentorship", "Multilingual excellence", "Progress chronicles"],
+                features: [
+                  "Up to 30 minutes of AI conversation per day",
+                  "Save & replay past conversations",
+                  "Text transcript after each session",
+                  "Record own voice for mock replies",
+                  "Faster AI response",
+                  "Priority email support"
+                ],
                 popular: true
-              },
-              {
-                name: "Virtuoso",
-                price: "$19.99/month",
-                description: "The pinnacle of linguistic refinement",
-                features: ["All Connoisseur privileges", "Personal coaching sessions", "Bespoke conversation scenarios", "Concierge support"]
               }
             ].map((plan, index) => (
               <Card key={index} className={`relative ${plan.popular ? 'border-2 border-sage-400 dark:border-sage-500 shadow-xl scale-105' : 'border-sage-200 dark:border-navy-600'} bg-white dark:bg-navy-800`}>
                 {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-sage-600 dark:bg-sage-500 text-white px-4 py-1 text-xs sm:text-sm">
-                      Distinguished Choice
+                  <div className="absolute -top-3 sm:-top-4 left-1/2 transform -translate-x-1/2">
+                    <Badge className="bg-sage-600 dark:bg-sage-500 text-white px-3 sm:px-4 py-1 text-xs sm:text-sm">
+                      🔷 Most Popular
                     </Badge>
                   </div>
                 )}
-                <CardContent className="p-6 sm:p-8">
-                  <h3 className="text-xl sm:text-2xl font-semibold text-sage-900 dark:text-sage-100 mb-2">{plan.name}</h3>
-                  <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-sage-900 dark:text-sage-100 mb-2">{plan.price}</div>
-                  <p className="text-sage-600 dark:text-sage-400 mb-6 text-sm sm:text-base">{plan.description}</p>
-                  <ul className="space-y-3 mb-8">
+                <CardContent className="p-4 sm:p-6 lg:p-8">
+                  <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-sage-900 dark:text-sage-100 mb-2">{plan.name}</h3>
+                  <div className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-sage-900 dark:text-sage-100 mb-2">{plan.price}</div>
+                  <p className="text-sage-600 dark:text-sage-400 mb-4 sm:mb-6 text-xs sm:text-sm lg:text-base">{plan.description}</p>
+                  <ul className="space-y-2 sm:space-y-3 mb-6 sm:mb-8">
                     {plan.features.map((feature, idx) => (
-                      <li key={idx} className="flex items-center text-sage-600 dark:text-sage-400 text-sm sm:text-base">
-                        <CheckCircle className="w-4 h-4 text-sage-500 dark:text-sage-400 mr-3 flex-shrink-0" />
-                        {feature}
+                      <li key={idx} className="flex items-start text-sage-600 dark:text-sage-400 text-xs sm:text-sm lg:text-base">
+                        <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-sage-500 dark:text-sage-400 mr-2 sm:mr-3 flex-shrink-0 mt-0.5" />
+                        <span>{feature}</span>
                       </li>
                     ))}
                   </ul>
-                  <Button className={`w-full ${plan.popular ? 'bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700 text-white' : 'bg-sage-100 dark:bg-navy-700 text-sage-800 dark:text-sage-200 hover:bg-sage-200 dark:hover:bg-navy-600'}`}>
+                  <Button className={`w-full ${plan.popular ? 'bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700 text-white' : 'bg-sage-100 dark:bg-navy-700 text-sage-800 dark:text-sage-200 hover:bg-sage-200 dark:hover:bg-navy-600'} text-sm sm:text-base`}>
                     Begin Membership
                   </Button>
                 </CardContent>
@@ -363,81 +368,81 @@ const Index = () => {
       </section>
 
       {/* Email Capture Section */}
-      <section className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8 bg-sage-700 dark:bg-navy-800">
+      <section className="py-8 sm:py-12 lg:py-16 xl:py-20 px-4 sm:px-6 lg:px-8 bg-sage-700 dark:bg-navy-800">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4">Join the Distinguished Circle</h2>
-          <p className="text-lg sm:text-xl text-sage-100 dark:text-sage-300 mb-6 sm:mb-8">
+          <h2 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-white mb-4">Join the Distinguished Circle</h2>
+          <p className="text-sm sm:text-base lg:text-lg xl:text-xl text-sage-100 dark:text-sage-300 mb-4 sm:mb-6 lg:mb-8">
             Be among the first to experience the future of refined language learning. 
             Receive your exclusive invitation when we launch.
           </p>
-          <form onSubmit={handleEmailSubmit} className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+          <form onSubmit={handleEmailSubmit} className="flex flex-col sm:flex-row gap-3 sm:gap-4 max-w-md mx-auto">
             <Input
               type="email"
               placeholder="Your distinguished email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="bg-white/95 dark:bg-navy-700 border-sage-300 dark:border-navy-600 text-sage-900 dark:text-sage-100 placeholder-sage-500 dark:placeholder-sage-400"
+              className="bg-white/95 dark:bg-navy-700 border-sage-300 dark:border-navy-600 text-sage-900 dark:text-sage-100 placeholder-sage-500 dark:placeholder-sage-400 text-sm sm:text-base"
               required
             />
-            <Button type="submit" className="bg-white dark:bg-sage-600 text-sage-700 dark:text-white hover:bg-sage-50 dark:hover:bg-sage-700 px-6 sm:px-8 whitespace-nowrap">
+            <Button type="submit" className="bg-white dark:bg-sage-600 text-sage-700 dark:text-white hover:bg-sage-50 dark:hover:bg-sage-700 px-4 sm:px-6 lg:px-8 whitespace-nowrap text-sm sm:text-base">
               <ArrowRight className="w-4 h-4 ml-2" />
               Join Waitlist
             </Button>
           </form>
-          <p className="text-sage-200 dark:text-sage-400 text-sm mt-4">
+          <p className="text-sage-200 dark:text-sage-400 text-xs sm:text-sm mt-3 sm:mt-4">
             Discretion assured. Unsubscribe with ease. Your privacy is our priority.
           </p>
         </div>
       </section>
 
       {/* Footer */}
-      <footer id="contact" className="bg-sage-900 dark:bg-navy-900 py-12 sm:py-16 px-4 sm:px-6 lg:px-8">
+      <footer id="contact" className="bg-sage-900 dark:bg-navy-900 py-8 sm:py-12 lg:py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
             <div className="sm:col-span-2">
               <div className="flex items-center space-x-2 mb-4">
                 <div className="w-8 h-8 bg-sage-600 dark:bg-sage-500 rounded-lg flex items-center justify-center">
                   <MessageCircle className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-xl sm:text-2xl font-bold text-white">ConvoCraft</span>
+                <span className="text-lg sm:text-xl lg:text-2xl font-bold text-white">ConvoCraft</span>
               </div>
-              <p className="text-sage-300 dark:text-sage-400 mb-6 max-w-md text-sm sm:text-base">
+              <p className="text-sage-300 dark:text-sage-400 mb-4 sm:mb-6 max-w-md text-xs sm:text-sm lg:text-base">
                 Elevating the art of conversation through sophisticated AI technology. 
                 Where eloquence meets innovation, and confidence becomes your greatest asset.
               </p>
-              <div className="flex flex-wrap gap-4">
-                <Button variant="ghost" size="sm" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 text-sm">
+              <div className="flex flex-wrap gap-3 sm:gap-4">
+                <Button variant="ghost" size="sm" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 text-xs sm:text-sm">
                   Twitter
                 </Button>
-                <Button variant="ghost" size="sm" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 text-sm">
+                <Button variant="ghost" size="sm" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 text-xs sm:text-sm">
                   LinkedIn
                 </Button>
-                <Button variant="ghost" size="sm" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 text-sm">
+                <Button variant="ghost" size="sm" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 text-xs sm:text-sm">
                   Facebook
                 </Button>
               </div>
             </div>
             <div>
-              <h4 className="text-white font-semibold mb-4 text-base sm:text-lg">Excellence</h4>
+              <h4 className="text-white font-semibold mb-3 sm:mb-4 text-sm sm:text-base lg:text-lg">Excellence</h4>
               <ul className="space-y-2">
-                <li><a href="#" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 transition-colors text-sm sm:text-base">Features</a></li>
-                <li><a href="#" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 transition-colors text-sm sm:text-base">Investment</a></li>
-                <li><a href="#" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 transition-colors text-sm sm:text-base">API Access</a></li>
-                <li><a href="#" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 transition-colors text-sm sm:text-base">Roadmap</a></li>
+                <li><a href="#" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 transition-colors text-xs sm:text-sm lg:text-base">Features</a></li>
+                <li><a href="#" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 transition-colors text-xs sm:text-sm lg:text-base">Investment</a></li>
+                <li><a href="#" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 transition-colors text-xs sm:text-sm lg:text-base">API Access</a></li>
+                <li><a href="#" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 transition-colors text-xs sm:text-sm lg:text-base">Roadmap</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="text-white font-semibold mb-4 text-base sm:text-lg">Heritage</h4>
+              <h4 className="text-white font-semibold mb-3 sm:mb-4 text-sm sm:text-base lg:text-lg">Heritage</h4>
               <ul className="space-y-2">
-                <li><a href="#" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 transition-colors text-sm sm:text-base">About</a></li>
-                <li><a href="#" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 transition-colors text-sm sm:text-base">Contact</a></li>
-                <li><a href="#" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 transition-colors text-sm sm:text-base">Privacy Charter</a></li>
-                <li><a href="#" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 transition-colors text-sm sm:text-base">Terms of Service</a></li>
+                <li><a href="#" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 transition-colors text-xs sm:text-sm lg:text-base">About</a></li>
+                <li><a href="#" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 transition-colors text-xs sm:text-sm lg:text-base">Contact</a></li>
+                <li><a href="#" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 transition-colors text-xs sm:text-sm lg:text-base">Privacy Charter</a></li>
+                <li><a href="#" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 transition-colors text-xs sm:text-sm lg:text-base">Terms of Service</a></li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-sage-800 dark:border-navy-700 mt-12 pt-8 text-center">
-            <p className="text-sage-400 dark:text-sage-500 text-sm sm:text-base">© 2024 ConvoCraft. All rights reserved. Crafted with distinction for the discerning linguist.</p>
+          <div className="border-t border-sage-800 dark:border-navy-700 mt-8 sm:mt-12 pt-6 sm:pt-8 text-center">
+            <p className="text-sage-400 dark:text-sage-500 text-xs sm:text-sm lg:text-base">© 2024 ConvoCraft. All rights reserved. Crafted with distinction for the discerning linguist.</p>
           </div>
         </div>
       </footer>
