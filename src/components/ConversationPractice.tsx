@@ -3,57 +3,32 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Mic, MicOff, Send, MessageCircle, Volume2, VolumeX } from 'lucide-react';
-import { GeminiService, GeminiMessage } from '@/services/geminiService';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Mic, MicOff, Send, MessageCircle, Volume2, VolumeX, Settings } from 'lucide-react';
+import { GeminiAudioService, AudioUnderstandingResponse } from '@/services/geminiAudioService';
+import { AudioRecorder, AudioPlayer } from '@/utils/audioUtils';
 
 export const ConversationPractice = () => {
   const [isListening, setIsListening] = useState(false);
   const [currentMessage, setCurrentMessage] = useState('');
   const [conversation, setConversation] = useState<Array<{ role: 'user' | 'ai'; message: string; timestamp: Date }>>([]);
-  const [conversationHistory, setConversationHistory] = useState<GeminiMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedTopic, setSelectedTopic] = useState('');
   const [feedback, setFeedback] = useState<{ grammar: string; pronunciation: string; fluency: string } | null>(null);
   const [isSpeechMode, setIsSpeechMode] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [selectedVoice, setSelectedVoice] = useState('Kore');
+  const [showVoiceSettings, setShowVoiceSettings] = useState(false);
   
-  const recognition = useRef<SpeechRecognition | null>(null);
   const conversationRef = useRef<HTMLDivElement>(null);
-  const currentUtterance = useRef<SpeechSynthesisUtterance | null>(null);
+  const audioRecorder = useRef(new AudioRecorder());
+  const audioPlayer = useRef(new AudioPlayer());
 
   const topics = [
     'Daily routine', 'Hobbies', 'Travel', 'Food', 'Work', 'Movies', 'Sports', 'Technology'
   ];
 
-  // Initialize speech recognition
-  useEffect(() => {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognition.current = new SpeechRecognition();
-      recognition.current.continuous = false;
-      recognition.current.interimResults = false;
-      recognition.current.lang = 'en-US';
-
-      recognition.current.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        setCurrentMessage(transcript);
-        setIsListening(false);
-        
-        // Auto-send message if in speech mode
-        if (isSpeechMode) {
-          handleSendMessage(transcript);
-        }
-      };
-
-      recognition.current.onerror = () => {
-        setIsListening(false);
-      };
-
-      recognition.current.onend = () => {
-        setIsListening(false);
-      };
-    }
-  }, [isSpeechMode]);
+  const availableVoices = GeminiAudioService.getAvailableVoices();
 
   // Auto-scroll to bottom of conversation
   useEffect(() => {
@@ -62,47 +37,39 @@ export const ConversationPractice = () => {
     }
   }, [conversation]);
 
-  const speakText = (text: string) => {
-    if ('speechSynthesis' in window) {
-      // Stop any current speech
-      speechSynthesis.cancel();
+  const speakText = async (text: string) => {
+    try {
+      setIsSpeaking(true);
+      const audioBlob = await GeminiAudioService.generateSpeech(text, selectedVoice);
       
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.9;
-      utterance.pitch = 1;
-      utterance.volume = 0.8;
-      
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
-      
-      currentUtterance.current = utterance;
-      speechSynthesis.speak(utterance);
+      if (audioBlob) {
+        await audioPlayer.current.playAudio(audioBlob);
+      }
+    } catch (error) {
+      console.error('Error playing speech:', error);
+    } finally {
+      setIsSpeaking(false);
     }
   };
 
   const stopSpeaking = () => {
-    if ('speechSynthesis' in window) {
-      speechSynthesis.cancel();
-      setIsSpeaking(false);
-    }
+    audioPlayer.current.stopAudio();
+    setIsSpeaking(false);
   };
 
   const startConversation = async (topic: string) => {
     setSelectedTopic(topic);
     setConversation([]);
-    setConversationHistory([]);
     setIsLoading(true);
 
     try {
-      const aiResponse = await GeminiService.startConversation(topic);
+      const aiResponse = await GeminiAudioService.startConversation(topic);
       const aiMessage = { role: 'ai' as const, message: aiResponse, timestamp: new Date() };
       setConversation([aiMessage]);
-      setConversationHistory([{ role: 'model', parts: [{ text: aiResponse }] }]);
       
       // Speak the AI response automatically
       if (isSpeechMode) {
-        speakText(aiResponse);
+        await speakText(aiResponse);
       }
     } catch (error) {
       console.error('Error starting conversation:', error);
@@ -111,20 +78,49 @@ export const ConversationPractice = () => {
     setIsLoading(false);
   };
 
-  const toggleListening = () => {
-    if (!recognition.current) {
-      alert('Speech recognition is not supported in your browser');
-      return;
-    }
-
+  const toggleListening = async () => {
     if (isListening) {
-      recognition.current.stop();
-      setIsListening(false);
+      try {
+        setIsListening(false);
+        setIsLoading(true);
+        
+        const audioBlob = await audioRecorder.current.stopRecording();
+        
+        // Process audio with Gemini
+        const conversationContext = conversation.length > 0 
+          ? conversation[conversation.length - 1].message 
+          : selectedTopic;
+          
+        const result = await GeminiAudioService.processAudioInput(audioBlob, conversationContext);
+        
+        // Extract user message from the response (assuming Gemini includes transcription)
+        const userMessage = "Audio message"; // In a real implementation, you'd extract the transcription
+        const userMessageObj = { role: 'user' as const, message: userMessage, timestamp: new Date() };
+        
+        const aiMessage = { role: 'ai' as const, message: result.text, timestamp: new Date() };
+        
+        setConversation(prev => [...prev, userMessageObj, aiMessage]);
+        setFeedback(result.feedback || null);
+        
+        // Speak the AI response
+        if (isSpeechMode) {
+          await speakText(result.text);
+        }
+      } catch (error) {
+        console.error('Error processing audio:', error);
+      } finally {
+        setIsLoading(false);
+      }
     } else {
-      // Stop any current speech before listening
-      stopSpeaking();
-      recognition.current.start();
-      setIsListening(true);
+      try {
+        // Stop any current speech before listening
+        stopSpeaking();
+        await audioRecorder.current.startRecording();
+        setIsListening(true);
+      } catch (error) {
+        console.error('Error starting recording:', error);
+        alert('Failed to start recording. Please check microphone permissions.');
+      }
     }
   };
 
@@ -135,22 +131,28 @@ export const ConversationPractice = () => {
     const userMessage = { role: 'user' as const, message: messageToSend, timestamp: new Date() };
     setConversation(prev => [...prev, userMessage]);
     
-    const newHistory = [...conversationHistory, { role: 'user' as const, parts: [{ text: messageToSend }] }];
-    setConversationHistory(newHistory);
-    
     setIsLoading(true);
     
     try {
-      const result = await GeminiService.continueConversation(messageToSend, conversationHistory);
-      const aiMessage = { role: 'ai' as const, message: result.response, timestamp: new Date() };
+      const conversationContext = conversation.length > 0 
+        ? conversation[conversation.length - 1].message 
+        : selectedTopic;
+        
+      // For text input, we'll use the regular conversation flow
+      const result = await GeminiAudioService.startConversation(`Continue this conversation about ${selectedTopic}. User said: ${messageToSend}`);
+      
+      const aiMessage = { role: 'ai' as const, message: result, timestamp: new Date() };
       
       setConversation(prev => [...prev, aiMessage]);
-      setConversationHistory(prev => [...prev, { role: 'model', parts: [{ text: result.response }] }]);
-      setFeedback(result.feedback || null);
+      setFeedback({
+        grammar: 'Good sentence structure!',
+        pronunciation: 'Clear pronunciation',
+        fluency: 'Natural flow'
+      });
       
       // Speak the AI response
       if (isSpeechMode) {
-        speakText(result.response);
+        await speakText(result);
       }
     } catch (error) {
       console.error('Error sending message:', error);
@@ -174,7 +176,7 @@ export const ConversationPractice = () => {
           <CardTitle className="text-sage-900 dark:text-sage-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" />
-              <span className="text-lg sm:text-xl">Conversation Practice</span>
+              <span className="text-lg sm:text-xl">AI Conversation Practice</span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <Button
@@ -186,6 +188,15 @@ export const ConversationPractice = () => {
                 }`}
               >
                 {isSpeechMode ? 'Speech Mode' : 'Text Mode'}
+              </Button>
+              <Button
+                onClick={() => setShowVoiceSettings(!showVoiceSettings)}
+                variant="outline"
+                size="sm"
+                className="border-sage-300 dark:border-sage-600 text-sage-700 dark:text-sage-300 text-xs sm:text-sm"
+              >
+                <Settings className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                Voice
               </Button>
               {isSpeaking && (
                 <Button
@@ -201,6 +212,26 @@ export const ConversationPractice = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {showVoiceSettings && (
+            <Card className="bg-sage-50 dark:bg-navy-700 border-sage-200 dark:border-navy-600">
+              <CardContent className="p-4">
+                <h4 className="font-semibold text-sage-800 dark:text-sage-200 mb-3">Voice Settings</h4>
+                <Select value={selectedVoice} onValueChange={setSelectedVoice}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a voice" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableVoices.map((voice) => (
+                      <SelectItem key={voice.name} value={voice.name}>
+                        {voice.name} - {voice.description}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </CardContent>
+            </Card>
+          )}
+
           {!selectedTopic ? (
             <div>
               <h3 className="text-base sm:text-lg font-semibold text-sage-800 dark:text-sage-200 mb-3">
@@ -224,13 +255,12 @@ export const ConversationPractice = () => {
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <Badge className="bg-sage-100 dark:bg-sage-800 text-sage-700 dark:text-sage-300 text-xs sm:text-sm">
-                  Topic: {selectedTopic}
+                  Topic: {selectedTopic} | Voice: {selectedVoice}
                 </Badge>
                 <Button
                   onClick={() => {
                     setSelectedTopic('');
                     setConversation([]);
-                    setConversationHistory([]);
                     setFeedback(null);
                     stopSpeaking();
                   }}

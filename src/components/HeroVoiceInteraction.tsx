@@ -1,126 +1,74 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Mic, MicOff, Volume2, VolumeX, User, Users } from 'lucide-react';
+import { Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { GeminiService } from '@/services/geminiService';
+import { GeminiAudioService } from '@/services/geminiAudioService';
+import { AudioRecorder, AudioPlayer } from '@/utils/audioUtils';
 
 export const HeroVoiceInteraction = () => {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [selectedVoice, setSelectedVoice] = useState<'female' | 'male'>('female');
+  const [selectedVoice, setSelectedVoice] = useState<'Kore' | 'Puck'>('Kore');
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastMessage, setLastMessage] = useState('');
   
-  const recognition = useRef<SpeechRecognition | null>(null);
-  const currentUtterance = useRef<SpeechSynthesisUtterance | null>(null);
+  const audioRecorder = useRef(new AudioRecorder());
+  const audioPlayer = useRef(new AudioPlayer());
 
-  // Initialize speech recognition
-  useEffect(() => {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognition.current = new SpeechRecognition();
-      recognition.current.continuous = false;
-      recognition.current.interimResults = false;
-      recognition.current.lang = 'en-US';
-
-      recognition.current.onresult = async (event) => {
-        const transcript = event.results[0][0].transcript;
-        setLastMessage(`You: ${transcript}`);
-        setIsListening(false);
-        setIsProcessing(true);
-        
-        try {
-          const response = await GeminiService.startConversation(transcript);
-          setLastMessage(`AI: ${response}`);
-          speakText(response);
-        } catch (error) {
-          console.error('Error getting AI response:', error);
-          setLastMessage('AI: Sorry, I encountered an error. Please try again.');
-        }
-        
-        setIsProcessing(false);
-      };
-
-      recognition.current.onerror = () => {
-        setIsListening(false);
-        setIsProcessing(false);
-      };
-
-      recognition.current.onend = () => {
-        setIsListening(false);
-      };
-    }
-  }, []);
-
-  const speakText = (text: string) => {
-    if ('speechSynthesis' in window) {
-      speechSynthesis.cancel();
+  const speakText = async (text: string) => {
+    try {
+      setIsSpeaking(true);
+      const audioBlob = await GeminiAudioService.generateSpeech(text, selectedVoice);
       
-      const utterance = new SpeechSynthesisUtterance(text);
-      
-      // Set voice based on selection
-      const voices = speechSynthesis.getVoices();
-      let selectedVoiceObj;
-      
-      if (selectedVoice === 'female') {
-        selectedVoiceObj = voices.find(voice => 
-          voice.name.toLowerCase().includes('female') || 
-          voice.name.toLowerCase().includes('samantha') ||
-          voice.name.toLowerCase().includes('karen') ||
-          voice.name.toLowerCase().includes('victoria') ||
-          (voice.gender && voice.gender === 'female')
-        ) || voices.find(voice => voice.name.includes('Google US English') && voice.name.includes('Female'));
-      } else {
-        selectedVoiceObj = voices.find(voice => 
-          voice.name.toLowerCase().includes('male') || 
-          voice.name.toLowerCase().includes('daniel') ||
-          voice.name.toLowerCase().includes('alex') ||
-          voice.name.toLowerCase().includes('tom') ||
-          (voice.gender && voice.gender === 'male')
-        ) || voices.find(voice => voice.name.includes('Google US English') && voice.name.includes('Male'));
+      if (audioBlob) {
+        await audioPlayer.current.playAudio(audioBlob);
       }
-      
-      if (selectedVoiceObj) {
-        utterance.voice = selectedVoiceObj;
-      }
-      
-      utterance.rate = 0.9;
-      utterance.pitch = selectedVoice === 'female' ? 1.1 : 0.9;
-      utterance.volume = 0.8;
-      
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
-      
-      currentUtterance.current = utterance;
-      speechSynthesis.speak(utterance);
-    }
-  };
-
-  const stopSpeaking = () => {
-    if ('speechSynthesis' in window) {
-      speechSynthesis.cancel();
+    } catch (error) {
+      console.error('Error playing speech:', error);
+    } finally {
       setIsSpeaking(false);
     }
   };
 
-  const toggleListening = () => {
-    if (!recognition.current) {
-      alert('Speech recognition is not supported in your browser');
-      return;
-    }
+  const stopSpeaking = () => {
+    audioPlayer.current.stopAudio();
+    setIsSpeaking(false);
+  };
 
+  const toggleListening = async () => {
     if (isListening) {
-      recognition.current.stop();
-      setIsListening(false);
+      try {
+        setIsListening(false);
+        setIsProcessing(true);
+        
+        const audioBlob = await audioRecorder.current.stopRecording();
+        setLastMessage('Processing your voice...');
+        
+        // Process audio with Gemini
+        const result = await GeminiAudioService.processAudioInput(audioBlob);
+        setLastMessage(`AI: ${result.text}`);
+        
+        // Speak the response
+        await speakText(result.text);
+      } catch (error) {
+        console.error('Error processing audio:', error);
+        setLastMessage('AI: Sorry, I encountered an error. Please try again.');
+      } finally {
+        setIsProcessing(false);
+      }
     } else {
-      stopSpeaking();
-      recognition.current.start();
-      setIsListening(true);
-      setLastMessage('');
+      try {
+        stopSpeaking();
+        await audioRecorder.current.startRecording();
+        setIsListening(true);
+        setLastMessage('Listening...');
+      } catch (error) {
+        console.error('Error starting recording:', error);
+        alert('Failed to start recording. Please check microphone permissions.');
+      }
     }
   };
 
@@ -208,27 +156,27 @@ export const HeroVoiceInteraction = () => {
             </h3>
             <RadioGroup 
               value={selectedVoice} 
-              onValueChange={(value) => setSelectedVoice(value as 'female' | 'male')}
+              onValueChange={(value) => setSelectedVoice(value as 'Kore' | 'Puck')}
               className="flex justify-center gap-4 sm:gap-6"
             >
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="female" id="female" className="border-sage-400 text-sage-600" />
-                <Label htmlFor="female" className="flex items-center gap-2 text-sage-700 dark:text-sage-300 cursor-pointer text-sm sm:text-base">
+                <RadioGroupItem value="Kore" id="kore" className="border-sage-400 text-sage-600" />
+                <Label htmlFor="kore" className="flex items-center gap-2 text-sage-700 dark:text-sage-300 cursor-pointer text-sm sm:text-base">
                   <div className="w-6 h-6 sm:w-7 sm:h-7 bg-pink-100 dark:bg-pink-900 rounded-full flex items-center justify-center">
                     <span className="text-pink-600 dark:text-pink-400 text-xs sm:text-sm">♀</span>
                   </div>
-                  <span className="hidden sm:inline">Female Voice</span>
-                  <span className="sm:hidden">Female</span>
+                  <span className="hidden sm:inline">Kore (Firm)</span>
+                  <span className="sm:hidden">Kore</span>
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="male" id="male" className="border-sage-400 text-sage-600" />
-                <Label htmlFor="male" className="flex items-center gap-2 text-sage-700 dark:text-sage-300 cursor-pointer text-sm sm:text-base">
+                <RadioGroupItem value="Puck" id="puck" className="border-sage-400 text-sage-600" />
+                <Label htmlFor="puck" className="flex items-center gap-2 text-sage-700 dark:text-sage-300 cursor-pointer text-sm sm:text-base">
                   <div className="w-6 h-6 sm:w-7 sm:h-7 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
                     <span className="text-blue-600 dark:text-blue-400 text-xs sm:text-sm">♂</span>
                   </div>
-                  <span className="hidden sm:inline">Male Voice</span>
-                  <span className="sm:hidden">Male</span>
+                  <span className="hidden sm:inline">Puck (Upbeat)</span>
+                  <span className="sm:hidden">Puck</span>
                 </Label>
               </div>
             </RadioGroup>
