@@ -1,6 +1,6 @@
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';Add commentMore actions
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;;
+const GEMINI_API_KEY = 'AIzaSyDkhN15l69ZzE2mmrbpy62UUFhtDR5qJ8g';
 
 export interface AudioUnderstandingResponse {
   text: string;
@@ -12,19 +12,19 @@ export interface AudioUnderstandingResponse {
 }
 
 export class GeminiAudioService {
-  // private static ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-  private static ai = new GoogleGenAI(GEMINI_API_KEY); // ✅
+  private static ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+
 
 
   // Audio Understanding - Convert audio to text and get response
   static async processAudioInput(audioBlob: Blob, conversationContext?: string): Promise<AudioUnderstandingResponse> {
     try {
       console.log('Processing audio input with Gemini...');
-      
+
       // Convert blob to base64
       const arrayBuffer = await audioBlob.arrayBuffer();
       const base64Audio = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-      
+
       const prompt = conversationContext 
         ? `You are a helpful English conversation partner. Based on our conversation context: "${conversationContext}", please transcribe the audio and provide a natural conversational response. Keep your response to 2-3 sentences and ask a follow-up question to continue the dialogue.`
         : `You are a helpful English conversation partner. Please transcribe this audio and provide a natural conversational response. Keep your response to 2-3 sentences and ask a follow-up question to continue the dialogue.`;
@@ -45,9 +45,9 @@ export class GeminiAudioService {
       });
 
       const responseText = response.text || 'I understand. Can you tell me more about that?';
-      
+
       console.log('Gemini audio understanding response:', responseText);
-      
+
       return {
         text: responseText,
         feedback: {
@@ -73,7 +73,7 @@ export class GeminiAudioService {
   static async generateSpeech(text: string, voiceName: string = 'Kore'): Promise<Blob | null> {
     try {
       console.log('Generating speech with Gemini TTS...');
-      
+
       const response = await this.ai.models.generateContent({
         model: 'gemini-2.5-flash-preview-tts',
         contents: [{ parts: [{ text: `Say naturally: ${text}` }] }],
@@ -88,7 +88,7 @@ export class GeminiAudioService {
       });
 
       const audioData = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-      
+
       if (audioData) {
         // Convert base64 to blob
         const binaryString = atob(audioData);
@@ -96,12 +96,12 @@ export class GeminiAudioService {
         for (let i = 0; i < binaryString.length; i++) {
           bytes[i] = binaryString.charCodeAt(i);
         }
-        
+
         const audioBlob = new Blob([bytes], { type: 'audio/wav' });
         console.log('Speech generated successfully');
         return audioBlob;
       }
-      
+
       return null;
     } catch (error) {
       console.error('Error generating speech:', error);
@@ -113,7 +113,7 @@ export class GeminiAudioService {
   static async startConversation(topic: string): Promise<string> {
     try {
       console.log('Starting conversation with topic:', topic);
-      
+
       const response = await this.ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: [{
@@ -167,4 +167,3 @@ export class GeminiAudioService {
       { name: 'Sulafat', description: 'Warm' }
     ];
   }
-}
