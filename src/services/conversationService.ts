@@ -20,7 +20,7 @@ export class ConversationService {
   private static readonly API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
   private static ai = new GoogleGenAI(ConversationService.API_KEY);
 
-  private static ai = new GoogleGenAI(this.API_KEY);
+ 
 
   static getScenarios() {
     return [
