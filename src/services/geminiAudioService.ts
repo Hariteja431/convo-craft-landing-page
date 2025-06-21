@@ -1,6 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 
-const GEMINI_API_KEY = 'AIzaSyDkhN15l69ZzE2mmrbpy62UUFhtDR5qJ8g';
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;;
 
 export interface AudioUnderstandingResponse {
   text: string;
@@ -12,7 +12,9 @@ export interface AudioUnderstandingResponse {
 }
 
 export class GeminiAudioService {
-  private static ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+  // private static ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+  private static ai = new GoogleGenAI(GEMINI_API_KEY); // ✅
+
 
   // Audio Understanding - Convert audio to text and get response
   static async processAudioInput(audioBlob: Blob, conversationContext?: string): Promise<AudioUnderstandingResponse> {
