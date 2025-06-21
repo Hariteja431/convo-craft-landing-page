@@ -1,4 +1,4 @@
-import { ConversationPractice } from '@/components/ConversationPractice';
+import { ConversationInterface } from '@/components/ConversationInterface';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { MessageCircle, ArrowLeft, Menu, X } from 'lucide-react';
@@ -66,7 +66,7 @@ const Practice = () => {
 
       {/* Main Content */}
       <main className="py-4 sm:py-8">
-        <ConversationPractice />
+        <ConversationInterface />
       </main>
     </div>
   );
