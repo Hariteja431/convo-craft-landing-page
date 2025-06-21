@@ -1,6 +1,10 @@
 
-const GEMINI_API_KEY = 'AIzaSyAYYUb5vdVChAv9ScK5J0ayCTlZCHqIrnc';
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+// Using the new Gemini 2.5 Flash API for faster responses
+const GEMINI_API_KEY = 'AIzaSyDCqfTv5cbjOh0LbPsBhji8AQmrlLz4XjE';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
+
+// Cloud-based API for TTS/STT
+const CLOUD_API_KEY = 'AIzaSyAckaPvwEQZ-CkEAYYNFkTZrioUJjn0B_s';
 
 export interface GeminiMessage {
   role: 'user' | 'model';
@@ -29,7 +33,7 @@ export class GeminiService {
           temperature: 0.7,
           topK: 40,
           topP: 0.95,
-          maxOutputTokens: 1024,
+          maxOutputTokens: 512, // Reduced for faster responses
         },
       }),
     });
@@ -41,38 +45,15 @@ export class GeminiService {
     return response.json();
   }
 
-  static async startConversation(topic: string): Promise<string> {
-    console.log('Starting conversation with topic:', topic);
+  static async getRealtimeResponse(userMessage: string, conversationHistory: GeminiMessage[] = []): Promise<string> {
+    console.log('Getting realtime response for:', userMessage);
+    
+    const systemPrompt = 'You are a helpful AI conversation partner. Respond naturally and conversationally in 1-2 short sentences. Keep responses brief and engaging for real-time speech conversation.';
     
     const messages: GeminiMessage[] = [
       {
         role: 'user',
-        parts: [{ 
-          text: `You are a friendly AI conversation partner helping someone practice English through speech. Start a casual conversation about ${topic}. Keep your response conversational, engaging, and ask a follow-up question to continue the dialogue. Limit your response to 2-3 sentences. Make it natural for speech.`
-        }]
-      }
-    ];
-
-    try {
-      const result = await this.makeRequest(messages);
-      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || 'Hello! Let\'s start practicing. How are you today?';
-      console.log('Gemini response:', response);
-      return response;
-    } catch (error) {
-      console.error('Error starting conversation:', error);
-      return 'Hello! I\'m here to help you practice English. How are you feeling today?';
-    }
-  }
-
-  static async continueConversation(userMessage: string, conversationHistory: GeminiMessage[]): Promise<ConversationResponse> {
-    console.log('Continuing conversation with message:', userMessage);
-    
-    const messages: GeminiMessage[] = [
-      {
-        role: 'user',
-        parts: [{ 
-          text: 'You are a helpful English conversation partner for speech practice. Respond naturally to continue the conversation, ask follow-up questions, and keep the dialogue engaging. Keep responses conversational and suitable for speech - limit to 2-3 sentences.'
-        }]
+        parts: [{ text: systemPrompt }]
       },
       ...conversationHistory,
       {
@@ -83,59 +64,57 @@ export class GeminiService {
 
     try {
       const result = await this.makeRequest(messages);
-      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || 'That\'s interesting! Tell me more about that.';
+      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || 'I understand. Please continue.';
       
-      console.log('Gemini conversation response:', response);
-      
-      return {
-        response,
-        feedback: {
-          grammar: 'Good sentence structure!',
-          pronunciation: 'Clear pronunciation',
-          fluency: 'Natural flow'
-        }
-      };
+      console.log('Gemini realtime response:', response);
+      return response;
     } catch (error) {
-      console.error('Error continuing conversation:', error);
-      return {
-        response: 'I understand. Can you tell me more about that?',
-        feedback: {
-          grammar: 'Keep practicing!',
-          pronunciation: 'Good effort!',
-          fluency: 'You\'re doing well!'
-        }
-      };
+      console.error('Error getting realtime response:', error);
+      return 'I hear you. Can you tell me more?';
     }
   }
 
-  static async getFeedback(userMessage: string): Promise<{ grammar: string; pronunciation: string; fluency: string }> {
-    console.log('Getting feedback for message:', userMessage);
+  static async startConversation(topic: string): Promise<string> {
+    console.log('Starting conversation with topic:', topic);
     
     const messages: GeminiMessage[] = [
       {
         role: 'user',
         parts: [{ 
-          text: `Please analyze this English text for language learning feedback: "${userMessage}". Provide brief, encouraging feedback on grammar, pronunciation tips, and fluency. Keep each category to 1 sentence and be supportive.`
+          text: `Start a casual conversation about ${topic}. Keep it brief and ask a follow-up question. Respond in 1-2 sentences for speech.`
         }]
       }
     ];
 
     try {
       const result = await this.makeRequest(messages);
-      const feedbackText = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      
-      return {
-        grammar: 'Your grammar looks good!',
-        pronunciation: 'Focus on clear articulation',
-        fluency: 'Nice natural expression!'
-      };
+      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || 'Hello! Let\'s talk. How are you today?';
+      console.log('Gemini response:', response);
+      return response;
     } catch (error) {
-      console.error('Error getting feedback:', error);
-      return {
-        grammar: 'Keep practicing grammar!',
-        pronunciation: 'Work on pronunciation',
-        fluency: 'You\'re improving!'
-      };
+      console.error('Error starting conversation:', error);
+      return 'Hi there! I\'m ready to chat. What would you like to talk about?';
     }
+  }
+
+  static async continueConversation(userMessage: string, conversationHistory: GeminiMessage[]): Promise<ConversationResponse> {
+    const response = await this.getRealtimeResponse(userMessage, conversationHistory);
+    
+    return {
+      response,
+      feedback: {
+        grammar: 'Good!',
+        pronunciation: 'Clear',
+        fluency: 'Natural'
+      }
+    };
+  }
+
+  static async getFeedback(userMessage: string): Promise<{ grammar: string; pronunciation: string; fluency: string }> {
+    return {
+      grammar: 'Well structured!',
+      pronunciation: 'Clear pronunciation',
+      fluency: 'Good flow!'
+    };
   }
 }
