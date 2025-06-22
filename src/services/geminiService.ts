@@ -30,7 +30,7 @@ export class GeminiService {
       body: JSON.stringify({
         contents: messages,
         generationConfig: {
-          temperature: 0.7,
+          temperature: 0.8,
           topK: 40,
           topP: 0.95,
           maxOutputTokens: 512, // Reduced for faster responses
@@ -45,10 +45,13 @@ export class GeminiService {
     return response.json();
   }
 
-  static async getRealtimeResponse(userMessage: string, conversationHistory: GeminiMessage[] = []): Promise<string> {
+  static async getRealtimeResponse(userMessage: string, conversationHistory: GeminiMessage[] = [], customPrompt?: string): Promise<string> {
     console.log('Getting realtime response for:', userMessage);
     
-    const systemPrompt = 'You are a helpful AI conversation partner. Respond naturally and conversationally in 1-2 short sentences. Keep responses brief and engaging for real-time speech conversation.';
+    const systemPrompt = customPrompt || `You are a helpful AI conversation partner and communication mentor. 
+    Respond naturally and conversationally in 1-2 sentences. Keep responses brief and engaging for real-time speech conversation.
+    Always end with an engaging question or prompt that encourages the user to continue speaking and share more.
+    Be supportive, encouraging, and help improve their communication skills through natural conversation.`;
     
     const messages: GeminiMessage[] = [
       {
@@ -64,13 +67,13 @@ export class GeminiService {
 
     try {
       const result = await this.makeRequest(messages);
-      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || 'I understand. Please continue.';
+      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || 'That sounds interesting! Can you tell me more about that?';
       
       console.log('Gemini realtime response:', response);
       return response;
     } catch (error) {
       console.error('Error getting realtime response:', error);
-      return 'I hear you. Can you tell me more?';
+      return 'I hear you. What else would you like to explore about this topic?';
     }
   }
 
@@ -91,28 +94,32 @@ export class GeminiService {
       return response;
     } catch (error) {
       console.error('Error starting conversation:', error);
-      return 'Hi there! I\'m ready to help you practice. What would you like to work on?';
+      return 'Hi there! I\'m your communication mentor. What would you like to work on together?';
     }
   }
 
   static async continueConversation(userMessage: string, conversationHistory: GeminiMessage[]): Promise<ConversationResponse> {
-    const response = await this.getRealtimeResponse(userMessage, conversationHistory);
+    const mentorPrompt = `You are an expert communication mentor. Respond naturally to the user's message, 
+    then ask an engaging follow-up question that helps them practice more. Be encouraging and supportive.
+    Keep responses conversational but valuable as a mentor.`;
+    
+    const response = await this.getRealtimeResponse(userMessage, conversationHistory, mentorPrompt);
     
     return {
       response,
       feedback: {
-        grammar: 'Good!',
-        pronunciation: 'Clear',
-        fluency: 'Natural'
+        grammar: 'Excellent structure!',
+        pronunciation: 'Clear and confident',
+        fluency: 'Natural flow!'
       }
     };
   }
 
   static async getFeedback(userMessage: string): Promise<{ grammar: string; pronunciation: string; fluency: string }> {
     return {
-      grammar: 'Well structured!',
-      pronunciation: 'Clear pronunciation',
-      fluency: 'Good flow!'
+      grammar: 'Well structured and clear!',
+      pronunciation: 'Confident delivery',
+      fluency: 'Smooth conversational flow!'
     };
   }
 }

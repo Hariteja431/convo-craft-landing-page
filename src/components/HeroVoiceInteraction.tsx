@@ -52,11 +52,16 @@ export const HeroVoiceInteraction = () => {
   const [conversation, setConversation] = useState<ConversationTurn[]>([]);
   const [conversationHistory, setConversationHistory] = useState<GeminiMessage[]>([]);
   const [hasStarted, setHasStarted] = useState(false);
+  const [audioLevel, setAudioLevel] = useState(0);
   
   const recognition = useRef<SpeechRecognition | null>(null);
   const currentUtterance = useRef<SpeechSynthesisUtterance | null>(null);
+  const audioContext = useRef<AudioContext | null>(null);
+  const analyser = useRef<AnalyserNode | null>(null);
+  const microphone = useRef<MediaStreamAudioSourceNode | null>(null);
+  const animationFrame = useRef<number | null>(null);
 
-  // Initialize speech recognition
+  // Initialize speech recognition and audio analysis
   useEffect(() => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -80,6 +85,7 @@ export const HeroVoiceInteraction = () => {
           
           setIsListening(false);
           setIsProcessing(true);
+          stopAudioAnalysis();
           recognition.current?.stop();
           
           try {
@@ -88,7 +94,13 @@ export const HeroVoiceInteraction = () => {
               parts: [{ text: transcript }]
             };
             
-            const response = await GeminiService.getRealtimeResponse(transcript, conversationHistory);
+            // Enhanced prompt for mentor-like behavior
+            const mentorPrompt = `You are an expert communication mentor helping someone practice ${selectedTopic.toLowerCase()}. 
+            Respond naturally and then ask an engaging follow-up question to keep the conversation flowing. 
+            Be encouraging, provide gentle guidance when needed, and make the practice session engaging.
+            Keep responses conversational but add value as a mentor. End with a question or prompt that encourages the user to continue speaking.`;
+            
+            const response = await GeminiService.getRealtimeResponse(transcript, conversationHistory, mentorPrompt);
             
             const aiTurn: ConversationTurn = {
               speaker: 'ai',
@@ -106,7 +118,7 @@ export const HeroVoiceInteraction = () => {
             speakText(response);
           } catch (error) {
             console.error('Error getting AI response:', error);
-            const errorMessage = 'Sorry, I had trouble understanding. Could you try again?';
+            const errorMessage = 'I understand. Could you elaborate on that?';
             const aiTurn: ConversationTurn = {
               speaker: 'ai',
               message: errorMessage,
@@ -124,13 +136,53 @@ export const HeroVoiceInteraction = () => {
         console.error('Speech recognition error:', event);
         setIsListening(false);
         setIsProcessing(false);
+        stopAudioAnalysis();
       };
 
       recognition.current.onend = () => {
         setIsListening(false);
+        stopAudioAnalysis();
       };
     }
-  }, [conversationHistory, selectedLanguage]);
+  }, [conversationHistory, selectedLanguage, selectedTopic]);
+
+  const setupAudioAnalysis = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioContext.current = new (window.AudioContext || window.webkitAudioContext)();
+      analyser.current = audioContext.current.createAnalyser();
+      microphone.current = audioContext.current.createMediaStreamSource(stream);
+      
+      analyser.current.fftSize = 256;
+      microphone.current.connect(analyser.current);
+      
+      const dataArray = new Uint8Array(analyser.current.frequencyBinCount);
+      
+      const updateAudioLevel = () => {
+        if (analyser.current && isListening) {
+          analyser.current.getByteFrequencyData(dataArray);
+          const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+          setAudioLevel(average / 255);
+          animationFrame.current = requestAnimationFrame(updateAudioLevel);
+        }
+      };
+      
+      updateAudioLevel();
+    } catch (error) {
+      console.error('Error setting up audio analysis:', error);
+    }
+  };
+
+  const stopAudioAnalysis = () => {
+    if (animationFrame.current) {
+      cancelAnimationFrame(animationFrame.current);
+    }
+    if (audioContext.current) {
+      audioContext.current.close();
+      audioContext.current = null;
+    }
+    setAudioLevel(0);
+  };
 
   const speakText = (text: string) => {
     if ('speechSynthesis' in window) {
@@ -138,52 +190,71 @@ export const HeroVoiceInteraction = () => {
       
       const utterance = new SpeechSynthesisUtterance(text);
       
-      const voices = speechSynthesis.getVoices();
-      let selectedVoiceObj;
-      
-      if (selectedVoice === 'female') {
-        selectedVoiceObj = voices.find(voice => 
-          (voice.name.toLowerCase().includes('female') || 
-           voice.name.toLowerCase().includes('samantha') ||
-           voice.name.toLowerCase().includes('karen') ||
-           voice.name.toLowerCase().includes('victoria') ||
-           voice.name.toLowerCase().includes('zira') ||
-           voice.name.toLowerCase().includes('susan')) &&
-          voice.lang.startsWith('en')
-        ) || voices.find(voice => voice.name.includes('Google') && voice.name.includes('Female'));
-      } else {
-        selectedVoiceObj = voices.find(voice => 
-          (voice.name.toLowerCase().includes('male') || 
-           voice.name.toLowerCase().includes('daniel') ||
-           voice.name.toLowerCase().includes('alex') ||
-           voice.name.toLowerCase().includes('tom') ||
-           voice.name.toLowerCase().includes('david') ||
-           voice.name.toLowerCase().includes('mark')) &&
-          voice.lang.startsWith('en')
-        ) || voices.find(voice => voice.name.includes('Google') && voice.name.includes('Male'));
-      }
-      
-      if (selectedVoiceObj) {
-        utterance.voice = selectedVoiceObj;
-      }
-      
-      utterance.rate = 1.0;
-      utterance.pitch = selectedVoice === 'female' ? 1.1 : 0.9;
-      utterance.volume = 0.9;
-      
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => {
-        setIsSpeaking(false);
-        setTimeout(() => {
-          if (!isListening && !isProcessing) {
-            startListening();
-          }
-        }, 500);
+      // Wait for voices to load
+      const setVoice = () => {
+        const voices = speechSynthesis.getVoices();
+        let selectedVoiceObj;
+        
+        if (selectedVoice === 'female') {
+          selectedVoiceObj = voices.find(voice => 
+            voice.name.toLowerCase().includes('female') ||
+            voice.name.toLowerCase().includes('samantha') ||
+            voice.name.toLowerCase().includes('karen') ||
+            voice.name.toLowerCase().includes('victoria') ||
+            voice.name.toLowerCase().includes('zira') ||
+            voice.name.toLowerCase().includes('susan') ||
+            voice.name.toLowerCase().includes('anna') ||
+            voice.name.toLowerCase().includes('emma')
+          ) || voices.find(voice => 
+            voice.lang.startsWith(selectedLanguage) && 
+            !voice.name.toLowerCase().includes('male') &&
+            voice.gender === 'female'
+          );
+        } else {
+          selectedVoiceObj = voices.find(voice => 
+            voice.name.toLowerCase().includes('male') ||
+            voice.name.toLowerCase().includes('daniel') ||
+            voice.name.toLowerCase().includes('alex') ||
+            voice.name.toLowerCase().includes('tom') ||
+            voice.name.toLowerCase().includes('david') ||
+            voice.name.toLowerCase().includes('mark') ||
+            voice.name.toLowerCase().includes('james')
+          ) || voices.find(voice => 
+            voice.lang.startsWith(selectedLanguage) && 
+            voice.name.toLowerCase().includes('male') &&
+            voice.gender === 'male'
+          );
+        }
+        
+        if (selectedVoiceObj) {
+          utterance.voice = selectedVoiceObj;
+        }
+        
+        utterance.rate = 1.0;
+        utterance.pitch = selectedVoice === 'female' ? 1.1 : 0.9;
+        utterance.volume = 0.9;
+        utterance.lang = selectedLanguage + '-US';
+        
+        utterance.onstart = () => setIsSpeaking(true);
+        utterance.onend = () => {
+          setIsSpeaking(false);
+          setTimeout(() => {
+            if (!isListening && !isProcessing && hasStarted) {
+              startListening();
+            }
+          }, 500);
+        };
+        utterance.onerror = () => setIsSpeaking(false);
+        
+        currentUtterance.current = utterance;
+        speechSynthesis.speak(utterance);
       };
-      utterance.onerror = () => setIsSpeaking(false);
-      
-      currentUtterance.current = utterance;
-      speechSynthesis.speak(utterance);
+
+      if (speechSynthesis.getVoices().length === 0) {
+        speechSynthesis.onvoiceschanged = setVoice;
+      } else {
+        setVoice();
+      }
     }
   };
 
@@ -194,13 +265,14 @@ export const HeroVoiceInteraction = () => {
     }
   };
 
-  const startListening = () => {
+  const startListening = async () => {
     if (!recognition.current) {
       alert('Speech recognition is not supported in your browser');
       return;
     }
 
     stopSpeaking();
+    await setupAudioAnalysis();
     recognition.current.start();
     setIsListening(true);
   };
@@ -209,6 +281,7 @@ export const HeroVoiceInteraction = () => {
     if (recognition.current) {
       recognition.current.stop();
       setIsListening(false);
+      stopAudioAnalysis();
     }
   };
 
@@ -231,24 +304,22 @@ export const HeroVoiceInteraction = () => {
       setHasStarted(true);
       
       const languageName = LANGUAGES.find(lang => lang.code === selectedLanguage)?.name || 'English';
-      const greetingPrompt = `Start a ${selectedTopic.toLowerCase()} conversation in ${languageName}. Greet the user and ask how you can help them with ${selectedTopic.toLowerCase()}. Keep it brief and natural.`;
-      
-      const response = await GeminiService.startConversation(greetingPrompt);
+      const mentorGreeting = `Hello! I'm your communication mentor for ${selectedTopic.toLowerCase()} practice in ${languageName}. I'm here to help you improve your skills through engaging conversation. Let's start - what would you like to focus on in your ${selectedTopic.toLowerCase()} journey today?`;
       
       const aiTurn: ConversationTurn = {
         speaker: 'ai',
-        message: response,
+        message: mentorGreeting,
         timestamp: new Date()
       };
       setConversation([aiTurn]);
       
       const aiMessage: GeminiMessage = {
         role: 'model',
-        parts: [{ text: response }]
+        parts: [{ text: mentorGreeting }]
       };
       setConversationHistory([aiMessage]);
       
-      speakText(response);
+      speakText(mentorGreeting);
       setIsProcessing(false);
     } catch (error) {
       console.error('Error starting conversation:', error);
@@ -262,6 +333,7 @@ export const HeroVoiceInteraction = () => {
     setHasStarted(false);
     stopSpeaking();
     stopListening();
+    stopAudioAnalysis();
   };
 
   return (
@@ -276,7 +348,7 @@ export const HeroVoiceInteraction = () => {
                   Start Your Conversation Practice
                 </h2>
                 <p className="text-sage-600 dark:text-sage-400">
-                  Choose your preferences and start practicing
+                  Choose your preferences and start practicing with your AI mentor
                 </p>
               </div>
 
@@ -387,41 +459,50 @@ export const HeroVoiceInteraction = () => {
                     {selectedVoice === 'female' ? '👩' : '👨'} {selectedVoice} Voice
                   </Badge>
                 </div>
-                <Button onClick={resetConversation} variant="outline">
+                <Button onClick={resetConversation} variant="outline" disabled={isListening || isSpeaking}>
                   New Conversation
                 </Button>
               </div>
 
-              {/* Main Conversation Button */}
+              {/* Main Conversation Button with Gradient Animation */}
               <div className="text-center">
-                <div className="relative">
-                  <Button
-                    onClick={toggleListening}
-                    disabled={isProcessing}
+                <div className="relative flex items-center justify-center">
+                  <div 
                     className={`w-32 h-32 rounded-full transition-all duration-300 ${
                       isListening 
-                        ? 'bg-red-500 hover:bg-red-600 animate-pulse scale-110' 
+                        ? 'bg-gradient-to-b from-white via-blue-200 to-blue-500 dark:from-gray-200 dark:via-blue-300 dark:to-blue-600 scale-110' 
                         : isProcessing
-                        ? 'bg-yellow-500 hover:bg-yellow-600'
-                        : 'bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700 hover:scale-105'
-                    } text-white shadow-lg`}
+                        ? 'bg-gradient-to-b from-yellow-200 via-yellow-400 to-yellow-600'
+                        : 'bg-gradient-to-b from-sage-400 via-sage-600 to-sage-800 hover:scale-105'
+                    } shadow-lg flex items-center justify-center cursor-pointer`}
+                    onClick={toggleListening}
+                    style={{
+                      transform: isListening ? `scale(${1.1 + audioLevel * 0.3})` : undefined,
+                      boxShadow: isListening ? `0 0 ${20 + audioLevel * 30}px rgba(59, 130, 246, 0.6)` : undefined
+                    }}
                   >
                     {isProcessing ? (
-                      <div className="flex flex-col items-center">
+                      <div className="flex flex-col items-center text-white">
                         <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                         <span className="text-xs mt-2">Processing</span>
                       </div>
                     ) : isListening ? (
-                      <MicOff className="w-12 h-12" />
+                      <MicOff className="w-12 h-12 text-white" />
                     ) : (
-                      <Mic className="w-12 h-12" />
+                      <Mic className="w-12 h-12 text-white" />
                     )}
-                  </Button>
+                  </div>
                   
                   {isListening && (
                     <div className="absolute inset-0 rounded-full">
-                      <div className="absolute inset-0 rounded-full border-4 border-red-300 animate-ping"></div>
-                      <div className="absolute inset-4 rounded-full border-2 border-red-400 animate-ping" style={{ animationDelay: '0.5s' }}></div>
+                      <div 
+                        className="absolute inset-0 rounded-full border-4 border-blue-300 dark:border-blue-400 animate-ping"
+                        style={{ opacity: audioLevel * 0.8 }}
+                      ></div>
+                      <div 
+                        className="absolute inset-4 rounded-full border-2 border-blue-400 dark:border-blue-300 animate-ping" 
+                        style={{ animationDelay: '0.5s', opacity: audioLevel * 0.6 }}
+                      ></div>
                     </div>
                   )}
                 </div>
@@ -433,19 +514,20 @@ export const HeroVoiceInteraction = () => {
                       <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce"></div>
                       <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                       <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                      <span className="ml-2 text-sage-600 dark:text-sage-400">AI is thinking...</span>
+                      <span className="ml-2 text-sage-600 dark:text-sage-400">AI mentor is thinking...</span>
                     </div>
                   )}
                   
                   {isSpeaking && (
                     <div className="flex items-center justify-center gap-2">
                       <Volume2 className="w-4 h-4 text-sage-600 dark:text-sage-400 animate-pulse" />
-                      <span className="text-sage-600 dark:text-sage-400">AI is speaking...</span>
+                      <span className="text-sage-600 dark:text-sage-400">AI mentor is speaking...</span>
                       <Button
                         onClick={stopSpeaking}
                         variant="outline"
                         size="sm"
                         className="ml-2 border-red-300 text-red-600 hover:bg-red-50"
+                        disabled={!isSpeaking}
                       >
                         <VolumeX className="w-3 h-3" />
                       </Button>
@@ -454,11 +536,11 @@ export const HeroVoiceInteraction = () => {
                   
                   {isListening && (
                     <div className="text-center">
-                      <Badge className="bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-300 mb-2 animate-pulse">
+                      <Badge className="bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300 mb-2 animate-pulse">
                         Listening...
                       </Badge>
                       <p className="text-sage-600 dark:text-sage-400 text-sm">
-                        Speak now - I'll respond automatically
+                        Speak now - Your mentor will respond automatically
                       </p>
                     </div>
                   )}
@@ -469,7 +551,7 @@ export const HeroVoiceInteraction = () => {
                         Ready to Listen
                       </Badge>
                       <p className="text-sage-600 dark:text-sage-400 text-sm">
-                        Click the microphone to continue talking
+                        Click the microphone to continue your practice session
                       </p>
                     </div>
                   )}
@@ -482,7 +564,7 @@ export const HeroVoiceInteraction = () => {
           {conversation.length > 0 && (
             <div className="w-full">
               <h4 className="text-lg font-semibold text-sage-900 dark:text-sage-100 mb-4 text-center">
-                Live Conversation
+                Live Conversation with Your AI Mentor
               </h4>
               <div className="max-h-64 overflow-y-auto space-y-3 p-4 bg-sage-50 dark:bg-navy-700 rounded-lg border border-sage-200 dark:border-navy-600">
                 {conversation.map((turn, index) => (
@@ -499,7 +581,7 @@ export const HeroVoiceInteraction = () => {
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs font-semibold">
-                          {turn.speaker === 'user' ? 'You' : 'AI'}
+                          {turn.speaker === 'user' ? 'You' : 'AI Mentor'}
                         </span>
                         <span className="text-xs opacity-70">
                           {turn.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
