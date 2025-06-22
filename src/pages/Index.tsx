@@ -3,12 +3,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { MessageCircle, Users, Play, ArrowRight, CheckCircle, Star, MessageSquare, Presentation, Sparkles } from "lucide-react";
+import { MessageCircle, Users, Play, ArrowRight, CheckCircle, Star, MessageSquare, Sparkles, Mic } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
 const Index = () => {
   const [email, setEmail] = useState("");
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
 
   const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,7 +119,7 @@ const Index = () => {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-24 bg-sage-50 dark:bg-navy-800">
+      <section id="how-it-works" className="py-24 bg-sage-50 dark:bg-navy-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-sage-900 dark:text-sage-100 mb-4">
@@ -144,7 +145,7 @@ const Index = () => {
 
             <div className="text-center p-8 bg-white dark:bg-navy-700 rounded-2xl shadow-lg">
               <div className="w-16 h-16 bg-sage-100 dark:bg-sage-800 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Presentation className="w-8 h-8 text-sage-600 dark:text-sage-400" />
+                <Mic className="w-8 h-8 text-sage-600 dark:text-sage-400" />
               </div>
               <h3 className="text-2xl font-bold text-sage-900 dark:text-sage-100 mb-4">
                 Initiate Dialogue
@@ -198,58 +199,108 @@ const Index = () => {
       {/* Pricing Section */}
       <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8 bg-sage-50 dark:bg-navy-900">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
+          <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-sage-900 dark:text-sage-100 mb-4">Investment in Excellence</h2>
-            <p className="text-xl text-sage-600 dark:text-sage-400">Choose the membership that suits your distinguished needs</p>
+            <p className="text-xl text-sage-600 dark:text-sage-400 mb-8">Choose the membership that suits your distinguished needs</p>
+            
+            {/* Billing Toggle */}
+            <div className="flex justify-center mb-8">
+              <div className="bg-sage-100 dark:bg-navy-700 rounded-full p-1 flex items-center">
+                <button
+                  onClick={() => setBillingPeriod('monthly')}
+                  className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
+                    billingPeriod === 'monthly'
+                      ? 'bg-white dark:bg-navy-600 text-sage-900 dark:text-sage-100 shadow-sm'
+                      : 'text-sage-600 dark:text-sage-400'
+                  }`}
+                >
+                  Monthly
+                </button>
+                <button
+                  onClick={() => setBillingPeriod('yearly')}
+                  className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
+                    billingPeriod === 'yearly'
+                      ? 'bg-white dark:bg-navy-600 text-sage-900 dark:text-sage-100 shadow-sm'
+                      : 'text-sage-600 dark:text-sage-400'
+                  }`}
+                >
+                  Yearly
+                </button>
+              </div>
+            </div>
+            
+            {billingPeriod === 'yearly' && (
+              <p className="text-sm text-purple-600 dark:text-purple-400 mb-8">
+                Save 10% with yearly billing
+              </p>
+            )}
           </div>
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {[
-              {
-                name: "Apprentice",
-                price: "Complimentary",
-                description: "Begin your journey with tasteful introduction",
-                features: ["5 refined conversations monthly", "Essential feedback", "English mastery focus"]
-              },
-              {
-                name: "Connoisseur",
-                price: "$9.99/month",
-                description: "For the discerning language enthusiast",
-                features: ["Unlimited sophisticated dialogues", "Advanced AI mentorship", "Multilingual excellence", "Progress chronicles"],
-                popular: true
-              },
-              {
-                name: "Virtuoso",
-                price: "$19.99/month",
-                description: "The pinnacle of linguistic refinement",
-                features: ["All Connoisseur privileges", "Personal coaching sessions", "Bespoke conversation scenarios", "Concierge support"]
-              }
-            ].map((plan, index) => (
-              <Card key={index} className={`relative ${plan.popular ? 'border-2 border-sage-400 dark:border-sage-500 shadow-xl scale-105' : 'border-sage-200 dark:border-navy-600'} bg-white dark:bg-navy-800`}>
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-sage-600 dark:bg-sage-500 text-white px-4 py-1">
-                      Distinguished Choice
-                    </Badge>
-                  </div>
-                )}
-                <CardContent className="p-8">
-                  <h3 className="text-2xl font-semibold text-sage-900 dark:text-sage-100 mb-2">{plan.name}</h3>
-                  <div className="text-4xl font-bold text-sage-900 dark:text-sage-100 mb-2">{plan.price}</div>
-                  <p className="text-sage-600 dark:text-sage-400 mb-6">{plan.description}</p>
-                  <ul className="space-y-3 mb-8">
-                    {plan.features.map((feature, idx) => (
-                      <li key={idx} className="flex items-center text-sage-600 dark:text-sage-400">
-                        <CheckCircle className="w-4 h-4 text-sage-500 dark:text-sage-400 mr-3" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                  <Button className={`w-full ${plan.popular ? 'bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700 text-white' : 'bg-sage-100 dark:bg-navy-700 text-sage-800 dark:text-sage-200 hover:bg-sage-200 dark:hover:bg-navy-600'}`}>
-                    Begin Membership
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+          
+          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            {/* Free Plan */}
+            <Card className="bg-white dark:bg-navy-800 border-sage-200 dark:border-navy-600 rounded-2xl">
+              <CardContent className="p-8">
+                <h3 className="text-2xl font-bold text-sage-900 dark:text-sage-100 mb-2">Free Plan</h3>
+                <p className="text-sage-600 dark:text-sage-400 mb-6">Perfect for getting started</p>
+                <div className="mb-6">
+                  <span className="text-4xl font-bold text-sage-900 dark:text-sage-100">₹0</span>
+                  <span className="text-sage-600 dark:text-sage-400">/year</span>
+                </div>
+                <ul className="space-y-3 mb-8">
+                  {[
+                    '1 AI voice conversation per day (5 min limit)',
+                    'Fluency & pronunciation feedback',
+                    'Community support'
+                  ].map((feature, idx) => (
+                    <li key={idx} className="flex items-center text-sage-600 dark:text-sage-400">
+                      <CheckCircle className="w-5 h-5 text-purple-500 mr-3" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+                <Button className="w-full bg-sage-100 dark:bg-navy-700 text-sage-800 dark:text-sage-200 hover:bg-sage-200 dark:hover:bg-navy-600 border border-sage-200 dark:border-navy-600">
+                  Get Started Free
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Pro Plan */}
+            <Card className="relative bg-white dark:bg-navy-800 border-2 border-purple-400 dark:border-purple-500 rounded-2xl shadow-xl">
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-1 text-sm">
+                  ⭐ Best for Fluency Practice
+                </Badge>
+              </div>
+              <CardContent className="p-8">
+                <h3 className="text-2xl font-bold text-sage-900 dark:text-sage-100 mb-2">Pro Plan</h3>
+                <div className="mb-6">
+                  <span className="text-4xl font-bold text-sage-900 dark:text-sage-100">
+                    ₹{billingPeriod === 'monthly' ? '349' : '3141'}
+                  </span>
+                  <span className="text-sage-600 dark:text-sage-400">
+                    /{billingPeriod === 'monthly' ? 'month' : 'year'}
+                  </span>
+                </div>
+                <ul className="space-y-3 mb-8">
+                  {[
+                    'Up to 30 minutes of AI conversation per day',
+                    'Save & replay past conversations',
+                    'Text transcript after each session',
+                    'Record own voice for mock replies',
+                    'Faster AI response',
+                    'Priority email support'
+                  ].map((feature, idx) => (
+                    <li key={idx} className="flex items-center text-sage-600 dark:text-sage-400">
+                      <CheckCircle className="w-5 h-5 text-purple-500 mr-3" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+                <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold">
+                  Start Pro Trial
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>

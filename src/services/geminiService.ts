@@ -45,10 +45,15 @@ export class GeminiService {
     return response.json();
   }
 
-  static async getRealtimeResponse(userMessage: string, conversationHistory: GeminiMessage[] = [], customPrompt?: string): Promise<string> {
+  static async getRealtimeResponse(userMessage: string, conversationHistory: GeminiMessage[] = [], customPrompt?: string, selectedLanguage?: string): Promise<string> {
     console.log('Getting realtime response for:', userMessage);
     
+    const languageInstruction = selectedLanguage && selectedLanguage !== 'en' 
+      ? `IMPORTANT: Respond ONLY in ${this.getLanguageName(selectedLanguage)}. Do not use English in your response.` 
+      : '';
+    
     const systemPrompt = customPrompt || `You are a helpful AI conversation partner and communication mentor. 
+    ${languageInstruction}
     Respond naturally and conversationally in 1-2 sentences. Keep responses brief and engaging for real-time speech conversation.
     Always end with an engaging question or prompt that encourages the user to continue speaking and share more.
     Be supportive, encouraging, and help improve their communication skills through natural conversation.`;
@@ -77,13 +82,23 @@ export class GeminiService {
     }
   }
 
-  static async startConversation(prompt: string): Promise<string> {
+  static async startConversation(prompt: string, selectedLanguage?: string, selectedTopic?: string): Promise<string> {
     console.log('Starting conversation with prompt:', prompt);
+    
+    const languageName = this.getLanguageName(selectedLanguage || 'en');
+    const languageInstruction = selectedLanguage && selectedLanguage !== 'en' 
+      ? `IMPORTANT: Respond ONLY in ${languageName}. Do not use English in your response.` 
+      : '';
+    
+    const contextualPrompt = `${languageInstruction}
+    You are an expert communication mentor for ${selectedTopic || 'conversation practice'} in ${languageName}. 
+    Greet the user warmly and ask them what specific aspect of ${selectedTopic || 'communication'} they'd like to work on today.
+    Keep it conversational and encouraging. End with a question that gets them talking.`;
     
     const messages: GeminiMessage[] = [
       {
         role: 'user',
-        parts: [{ text: prompt }]
+        parts: [{ text: contextualPrompt }]
       }
     ];
 
@@ -98,12 +113,19 @@ export class GeminiService {
     }
   }
 
-  static async continueConversation(userMessage: string, conversationHistory: GeminiMessage[]): Promise<ConversationResponse> {
-    const mentorPrompt = `You are an expert communication mentor. Respond naturally to the user's message, 
-    then ask an engaging follow-up question that helps them practice more. Be encouraging and supportive.
-    Keep responses conversational but valuable as a mentor.`;
+  static async continueConversation(userMessage: string, conversationHistory: GeminiMessage[], selectedLanguage?: string, selectedTopic?: string): Promise<ConversationResponse> {
+    const languageName = this.getLanguageName(selectedLanguage || 'en');
+    const languageInstruction = selectedLanguage && selectedLanguage !== 'en' 
+      ? `IMPORTANT: Respond ONLY in ${languageName}. Do not use English in your response.` 
+      : '';
     
-    const response = await this.getRealtimeResponse(userMessage, conversationHistory, mentorPrompt);
+    const mentorPrompt = `${languageInstruction}
+    You are an expert communication mentor helping someone practice ${selectedTopic?.toLowerCase() || 'conversation'} in ${languageName}. 
+    Respond naturally to the user's message, then ask an engaging follow-up question that helps them practice more. 
+    Be encouraging and supportive. Keep responses conversational but valuable as a mentor.
+    Always end with a question or prompt that encourages continued speaking.`;
+    
+    const response = await this.getRealtimeResponse(userMessage, conversationHistory, mentorPrompt, selectedLanguage);
     
     return {
       response,
@@ -121,5 +143,21 @@ export class GeminiService {
       pronunciation: 'Confident delivery',
       fluency: 'Smooth conversational flow!'
     };
+  }
+
+  private static getLanguageName(languageCode: string): string {
+    const languageMap: { [key: string]: string } = {
+      'en': 'English',
+      'es': 'Spanish',
+      'fr': 'French',
+      'de': 'German',
+      'it': 'Italian',
+      'pt': 'Portuguese',
+      'zh': 'Chinese',
+      'ja': 'Japanese',
+      'ko': 'Korean',
+      'ar': 'Arabic'
+    };
+    return languageMap[languageCode] || 'English';
   }
 }

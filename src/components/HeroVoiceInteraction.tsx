@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -30,16 +29,16 @@ const PRACTICE_SCENARIOS = [
 ];
 
 const LANGUAGES = [
-  { code: 'en', name: 'English' },
-  { code: 'es', name: 'Spanish' },
-  { code: 'fr', name: 'French' },
-  { code: 'de', name: 'German' },
-  { code: 'it', name: 'Italian' },
-  { code: 'pt', name: 'Portuguese' },
-  { code: 'zh', name: 'Chinese' },
-  { code: 'ja', name: 'Japanese' },
-  { code: 'ko', name: 'Korean' },
-  { code: 'ar', name: 'Arabic' }
+  { code: 'en', name: 'English', speechCode: 'en-US' },
+  { code: 'es', name: 'Spanish', speechCode: 'es-ES' },
+  { code: 'fr', name: 'French', speechCode: 'fr-FR' },
+  { code: 'de', name: 'German', speechCode: 'de-DE' },
+  { code: 'it', name: 'Italian', speechCode: 'it-IT' },
+  { code: 'pt', name: 'Portuguese', speechCode: 'pt-PT' },
+  { code: 'zh', name: 'Chinese', speechCode: 'zh-CN' },
+  { code: 'ja', name: 'Japanese', speechCode: 'ja-JP' },
+  { code: 'ko', name: 'Korean', speechCode: 'ko-KR' },
+  { code: 'ar', name: 'Arabic', speechCode: 'ar-SA' }
 ];
 
 export const HeroVoiceInteraction = () => {
@@ -89,7 +88,10 @@ export const HeroVoiceInteraction = () => {
       recognition.current = new SpeechRecognition();
       recognition.current.continuous = true;
       recognition.current.interimResults = true;
-      recognition.current.lang = selectedLanguage + '-US';
+      
+      // Set language based on selection
+      const selectedLang = LANGUAGES.find(lang => lang.code === selectedLanguage);
+      recognition.current.lang = selectedLang?.speechCode || 'en-US';
 
       recognition.current.onresult = async (event) => {
         const transcript = event.results[event.results.length - 1][0].transcript.trim();
@@ -115,27 +117,27 @@ export const HeroVoiceInteraction = () => {
               parts: [{ text: transcript }]
             };
             
-            const mentorPrompt = `You are an expert communication mentor helping someone practice ${selectedTopic.toLowerCase()}. 
-            Respond naturally and then ask an engaging follow-up question to keep the conversation flowing. 
-            Be encouraging, provide gentle guidance when needed, and make the practice session engaging.
-            Keep responses conversational but add value as a mentor. End with a question or prompt that encourages the user to continue speaking.`;
-            
-            const response = await GeminiService.getRealtimeResponse(transcript, conversationHistory, mentorPrompt);
+            const result = await GeminiService.continueConversation(
+              transcript, 
+              conversationHistory, 
+              selectedLanguage, 
+              selectedTopic
+            );
             
             const aiTurn: ConversationTurn = {
               speaker: 'ai',
-              message: response,
+              message: result.response,
               timestamp: new Date()
             };
             setConversation(prev => [...prev, aiTurn]);
             
             const aiMessage: GeminiMessage = {
               role: 'model',
-              parts: [{ text: response }]
+              parts: [{ text: result.response }]
             };
             setConversationHistory(prev => [...prev, newUserMessage, aiMessage]);
             
-            speakText(response);
+            speakText(result.response);
           } catch (error) {
             console.error('Error getting AI response:', error);
             const errorMessage = 'I understand. Could you elaborate on that?';
@@ -169,7 +171,6 @@ export const HeroVoiceInteraction = () => {
   const setupAudioAnalysis = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // Fixed: Use proper AudioContext constructor
       audioContext.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       analyser.current = audioContext.current.createAnalyser();
       microphone.current = audioContext.current.createMediaStreamSource(stream);
@@ -213,12 +214,17 @@ export const HeroVoiceInteraction = () => {
       
       const setVoice = () => {
         const voices = speechSynthesis.getVoices();
+        const selectedLang = LANGUAGES.find(lang => lang.code === selectedLanguage);
+        const langCode = selectedLang?.speechCode || 'en-US';
+        
         let selectedVoiceObj;
         
+        // Enhanced voice selection with language support
         if (selectedVoice === 'female') {
-          // Enhanced female voice selection with more natural options
           selectedVoiceObj = voices.find(voice => 
-            (voice.name.toLowerCase().includes('samantha') ||
+            voice.lang.startsWith(selectedLanguage) &&
+            (voice.name.toLowerCase().includes('female') ||
+             voice.name.toLowerCase().includes('samantha') ||
              voice.name.toLowerCase().includes('karen') ||
              voice.name.toLowerCase().includes('victoria') ||
              voice.name.toLowerCase().includes('zira') ||
@@ -229,17 +235,21 @@ export const HeroVoiceInteraction = () => {
              voice.name.toLowerCase().includes('aria') ||
              voice.name.toLowerCase().includes('allison') ||
              voice.name.toLowerCase().includes('ava') ||
-             voice.name.toLowerCase().includes('kate')) &&
-            voice.lang.startsWith(selectedLanguage)
+             voice.name.toLowerCase().includes('kate') ||
+             voice.name.toLowerCase().includes('helena') ||
+             voice.name.toLowerCase().includes('monica') ||
+             voice.name.toLowerCase().includes('paloma') ||
+             voice.name.toLowerCase().includes('paulina')) &&
+            !voice.name.toLowerCase().includes('male')
           ) || voices.find(voice => 
             voice.lang.startsWith(selectedLanguage) && 
-            !voice.name.toLowerCase().includes('male') &&
-            voice.name.toLowerCase().includes('female')
+            !voice.name.toLowerCase().includes('male')
           );
         } else {
-          // Enhanced male voice selection with more natural options
           selectedVoiceObj = voices.find(voice => 
-            (voice.name.toLowerCase().includes('daniel') ||
+            voice.lang.startsWith(selectedLanguage) &&
+            (voice.name.toLowerCase().includes('male') ||
+             voice.name.toLowerCase().includes('daniel') ||
              voice.name.toLowerCase().includes('alex') ||
              voice.name.toLowerCase().includes('tom') ||
              voice.name.toLowerCase().includes('david') ||
@@ -249,23 +259,28 @@ export const HeroVoiceInteraction = () => {
              voice.name.toLowerCase().includes('aaron') ||
              voice.name.toLowerCase().includes('nathan') ||
              voice.name.toLowerCase().includes('fred') ||
-             voice.name.toLowerCase().includes('jorge')) &&
-            voice.lang.startsWith(selectedLanguage)
+             voice.name.toLowerCase().includes('jorge') ||
+             voice.name.toLowerCase().includes('diego') ||
+             voice.name.toLowerCase().includes('carlos'))
           ) || voices.find(voice => 
             voice.lang.startsWith(selectedLanguage) && 
             voice.name.toLowerCase().includes('male')
           );
         }
         
+        // Fallback to any voice in the selected language
+        if (!selectedVoiceObj) {
+          selectedVoiceObj = voices.find(voice => voice.lang.startsWith(selectedLanguage));
+        }
+        
         if (selectedVoiceObj) {
           utterance.voice = selectedVoiceObj;
         }
         
-        // Enhanced voice settings for more natural speech
-        utterance.rate = 0.9; // Slightly slower for clarity
-        utterance.pitch = selectedVoice === 'female' ? 1.2 : 0.8; // More distinct pitch difference
+        utterance.rate = 0.9;
+        utterance.pitch = selectedVoice === 'female' ? 1.2 : 0.8;
         utterance.volume = 0.85;
-        utterance.lang = selectedLanguage + '-US';
+        utterance.lang = langCode;
         
         utterance.onstart = () => setIsSpeaking(true);
         utterance.onend = () => {
@@ -335,23 +350,22 @@ export const HeroVoiceInteraction = () => {
       setIsProcessing(true);
       setHasStarted(true);
       
-      const languageName = LANGUAGES.find(lang => lang.code === selectedLanguage)?.name || 'English';
-      const mentorGreeting = `Hello! I'm your communication mentor for ${selectedTopic.toLowerCase()} practice in ${languageName}. I'm here to help you improve your skills through engaging conversation. Let's start - what would you like to focus on in your ${selectedTopic.toLowerCase()} journey today?`;
+      const aiResponse = await GeminiService.startConversation('', selectedLanguage, selectedTopic);
       
       const aiTurn: ConversationTurn = {
         speaker: 'ai',
-        message: mentorGreeting,
+        message: aiResponse,
         timestamp: new Date()
       };
       setConversation([aiTurn]);
       
       const aiMessage: GeminiMessage = {
         role: 'model',
-        parts: [{ text: mentorGreeting }]
+        parts: [{ text: aiResponse }]
       };
       setConversationHistory([aiMessage]);
       
-      speakText(mentorGreeting);
+      speakText(aiResponse);
       setIsProcessing(false);
     } catch (error) {
       console.error('Error starting conversation:', error);
@@ -508,7 +522,7 @@ export const HeroVoiceInteraction = () => {
               {/* Enhanced Listening Animation */}
               <div className="text-center">
                 <div className="relative flex items-center justify-center">
-                  {/* Outer pulse rings */}
+                  {/* Animated listening rings */}
                   {isListening && (
                     <>
                       <div 
@@ -591,7 +605,7 @@ export const HeroVoiceInteraction = () => {
                         🎤 Listening...
                       </Badge>
                       <p className="text-sage-600 dark:text-sage-400 text-sm font-medium">
-                        Speak now - Your mentor will respond automatically
+                        Speak now in {LANGUAGES.find(l => l.code === selectedLanguage)?.name} - Your mentor will respond automatically
                       </p>
                       <div className="mt-2 bg-green-100 dark:bg-green-900/30 rounded-full h-2 w-32 mx-auto overflow-hidden">
                         <div 
