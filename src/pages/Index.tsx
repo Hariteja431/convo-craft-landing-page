@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { MessageCircle, Users, Play, ArrowRight, CheckCircle, Star } from "lucide-react";
+import { MessageCircle, Users, Play, ArrowRight, CheckCircle, Star, MessageSquare, Presentation, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -118,46 +118,53 @@ const Index = () => {
       </section>
 
       {/* How It Works Section */}
-      <section id="how-it-works" className="py-20 px-4 sm:px-6 lg:px-8 bg-sage-50 dark:bg-navy-900">
-        <div className="max-w-7xl mx-auto">
+      <section className="py-24 bg-sage-50 dark:bg-navy-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-sage-900 dark:text-sage-100 mb-4">The Refined Process</h2>
-            <p className="text-xl text-sage-600 dark:text-sage-400">Three elegant steps to linguistic mastery</p>
+            <h2 className="text-4xl font-bold text-sage-900 dark:text-sage-100 mb-4">
+              How ConvoCraft Works
+            </h2>
+            <p className="text-xl text-sage-600 dark:text-sage-400 max-w-3xl mx-auto">
+              Master the art of conversation through our AI-powered practice sessions
+            </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-12">
-            {[
-              { 
-                step: "I", 
-                title: "Initiate Dialogue", 
-                description: "Begin with a touch of sophistication—select your conversation topic with discerning taste",
-                icon: <MessageCircle className="w-12 h-12" />
-              },
-              { 
-                step: "II", 
-                title: "Engage Eloquently", 
-                description: "Converse naturally with our refined AI, practicing the art of articulate expression",
-                icon: <MessageCircle className="w-12 h-12" />
-              },
-              { 
-                step: "III", 
-                title: "Receive Refinement", 
-                description: "Obtain sophisticated feedback on pronunciation, grammar, and cultural nuance",
-                icon: <CheckCircle className="w-12 h-12" />
-              }
-            ].map((item, index) => (
-              <div key={index} className="text-center">
-                <div className="relative mb-8">
-                  <div className="w-24 h-24 bg-sage-600 dark:bg-sage-500 text-white rounded-full flex items-center justify-center mx-auto shadow-lg">
-                    {item.icon}
-                  </div>
-                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-cream-100 dark:bg-navy-700 border-2 border-sage-300 dark:border-sage-600 rounded-full flex items-center justify-center text-sage-700 dark:text-sage-300 font-bold shadow-md">
-                    {item.step}
-                  </div>
-                </div>
-                <h3 className="text-2xl font-semibold text-sage-900 dark:text-sage-100 mb-4">{item.title}</h3>
-                <p className="text-sage-600 dark:text-sage-400 text-lg leading-relaxed">{item.description}</p>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center p-8 bg-white dark:bg-navy-700 rounded-2xl shadow-lg">
+              <div className="w-16 h-16 bg-sage-100 dark:bg-sage-800 rounded-full flex items-center justify-center mx-auto mb-6">
+                <MessageSquare className="w-8 h-8 text-sage-600 dark:text-sage-400" />
               </div>
-            ))}
+              <h3 className="text-2xl font-bold text-sage-900 dark:text-sage-100 mb-4">
+                Choose Your Practice
+              </h3>
+              <p className="text-sage-600 dark:text-sage-400">
+                Select from various conversation scenarios like job interviews, public speaking, or casual conversations to practice what matters most to you.
+              </p>
+            </div>
+
+            <div className="text-center p-8 bg-white dark:bg-navy-700 rounded-2xl shadow-lg">
+              <div className="w-16 h-16 bg-sage-100 dark:bg-sage-800 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Presentation className="w-8 h-8 text-sage-600 dark:text-sage-400" />
+              </div>
+              <h3 className="text-2xl font-bold text-sage-900 dark:text-sage-100 mb-4">
+                Initiate Dialogue
+              </h3>
+              <p className="text-sage-600 dark:text-sage-400">
+                Start speaking naturally with our AI mentor who adapts to your chosen scenario and provides real-time conversation practice.
+              </p>
+            </div>
+
+            <div className="text-center p-8 bg-white dark:bg-navy-700 rounded-2xl shadow-lg">
+              <div className="w-16 h-16 bg-sage-100 dark:bg-sage-800 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Sparkles className="w-8 h-8 text-sage-600 dark:text-sage-400" />
+              </div>
+              <h3 className="text-2xl font-bold text-sage-900 dark:text-sage-100 mb-4">
+                Engage Eloquently
+              </h3>
+              <p className="text-sage-600 dark:text-sage-400">
+                Receive instant feedback and engage in meaningful conversations that build your confidence and improve your communication skills.
+              </p>
+            </div>
           </div>
         </div>
       </section>

@@ -61,6 +61,27 @@ export const HeroVoiceInteraction = () => {
   const microphone = useRef<MediaStreamAudioSourceNode | null>(null);
   const animationFrame = useRef<number | null>(null);
 
+  // Cleanup function to stop all audio activities
+  const cleanupAudio = () => {
+    if (recognition.current) {
+      recognition.current.stop();
+      recognition.current = null;
+    }
+    if ('speechSynthesis' in window) {
+      speechSynthesis.cancel();
+    }
+    setIsSpeaking(false);
+    setIsListening(false);
+    stopAudioAnalysis();
+  };
+
+  // Cleanup when component unmounts or user leaves
+  useEffect(() => {
+    return () => {
+      cleanupAudio();
+    };
+  }, []);
+
   // Initialize speech recognition and audio analysis
   useEffect(() => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
@@ -94,7 +115,6 @@ export const HeroVoiceInteraction = () => {
               parts: [{ text: transcript }]
             };
             
-            // Enhanced prompt for mentor-like behavior
             const mentorPrompt = `You are an expert communication mentor helping someone practice ${selectedTopic.toLowerCase()}. 
             Respond naturally and then ask an engaging follow-up question to keep the conversation flowing. 
             Be encouraging, provide gentle guidance when needed, and make the practice session engaging.
@@ -149,7 +169,8 @@ export const HeroVoiceInteraction = () => {
   const setupAudioAnalysis = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      audioContext.current = new (window.AudioContext || window.webkitAudioContext)();
+      // Fixed: Use proper AudioContext constructor
+      audioContext.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       analyser.current = audioContext.current.createAnalyser();
       microphone.current = audioContext.current.createMediaStreamSource(stream);
       
@@ -190,39 +211,49 @@ export const HeroVoiceInteraction = () => {
       
       const utterance = new SpeechSynthesisUtterance(text);
       
-      // Wait for voices to load
       const setVoice = () => {
         const voices = speechSynthesis.getVoices();
         let selectedVoiceObj;
         
         if (selectedVoice === 'female') {
+          // Enhanced female voice selection with more natural options
           selectedVoiceObj = voices.find(voice => 
-            voice.name.toLowerCase().includes('female') ||
-            voice.name.toLowerCase().includes('samantha') ||
-            voice.name.toLowerCase().includes('karen') ||
-            voice.name.toLowerCase().includes('victoria') ||
-            voice.name.toLowerCase().includes('zira') ||
-            voice.name.toLowerCase().includes('susan') ||
-            voice.name.toLowerCase().includes('anna') ||
-            voice.name.toLowerCase().includes('emma')
+            (voice.name.toLowerCase().includes('samantha') ||
+             voice.name.toLowerCase().includes('karen') ||
+             voice.name.toLowerCase().includes('victoria') ||
+             voice.name.toLowerCase().includes('zira') ||
+             voice.name.toLowerCase().includes('susan') ||
+             voice.name.toLowerCase().includes('anna') ||
+             voice.name.toLowerCase().includes('emma') ||
+             voice.name.toLowerCase().includes('serena') ||
+             voice.name.toLowerCase().includes('aria') ||
+             voice.name.toLowerCase().includes('allison') ||
+             voice.name.toLowerCase().includes('ava') ||
+             voice.name.toLowerCase().includes('kate')) &&
+            voice.lang.startsWith(selectedLanguage)
           ) || voices.find(voice => 
             voice.lang.startsWith(selectedLanguage) && 
             !voice.name.toLowerCase().includes('male') &&
-            voice.gender === 'female'
+            voice.name.toLowerCase().includes('female')
           );
         } else {
+          // Enhanced male voice selection with more natural options
           selectedVoiceObj = voices.find(voice => 
-            voice.name.toLowerCase().includes('male') ||
-            voice.name.toLowerCase().includes('daniel') ||
-            voice.name.toLowerCase().includes('alex') ||
-            voice.name.toLowerCase().includes('tom') ||
-            voice.name.toLowerCase().includes('david') ||
-            voice.name.toLowerCase().includes('mark') ||
-            voice.name.toLowerCase().includes('james')
+            (voice.name.toLowerCase().includes('daniel') ||
+             voice.name.toLowerCase().includes('alex') ||
+             voice.name.toLowerCase().includes('tom') ||
+             voice.name.toLowerCase().includes('david') ||
+             voice.name.toLowerCase().includes('mark') ||
+             voice.name.toLowerCase().includes('james') ||
+             voice.name.toLowerCase().includes('ryan') ||
+             voice.name.toLowerCase().includes('aaron') ||
+             voice.name.toLowerCase().includes('nathan') ||
+             voice.name.toLowerCase().includes('fred') ||
+             voice.name.toLowerCase().includes('jorge')) &&
+            voice.lang.startsWith(selectedLanguage)
           ) || voices.find(voice => 
             voice.lang.startsWith(selectedLanguage) && 
-            voice.name.toLowerCase().includes('male') &&
-            voice.gender === 'male'
+            voice.name.toLowerCase().includes('male')
           );
         }
         
@@ -230,9 +261,10 @@ export const HeroVoiceInteraction = () => {
           utterance.voice = selectedVoiceObj;
         }
         
-        utterance.rate = 1.0;
-        utterance.pitch = selectedVoice === 'female' ? 1.1 : 0.9;
-        utterance.volume = 0.9;
+        // Enhanced voice settings for more natural speech
+        utterance.rate = 0.9; // Slightly slower for clarity
+        utterance.pitch = selectedVoice === 'female' ? 1.2 : 0.8; // More distinct pitch difference
+        utterance.volume = 0.85;
         utterance.lang = selectedLanguage + '-US';
         
         utterance.onstart = () => setIsSpeaking(true);
@@ -328,12 +360,11 @@ export const HeroVoiceInteraction = () => {
   };
 
   const resetConversation = () => {
+    cleanupAudio();
     setConversation([]);
     setConversationHistory([]);
     setHasStarted(false);
-    stopSpeaking();
-    stopListening();
-    stopAudioAnalysis();
+    setIsProcessing(false);
   };
 
   return (
@@ -352,19 +383,24 @@ export const HeroVoiceInteraction = () => {
                 </p>
               </div>
 
-              {/* Voice Selection Toggle */}
+              {/* Modern Voice Selection Toggle */}
               <div className="text-center">
                 <h3 className="text-lg font-semibold text-sage-900 dark:text-sage-100 mb-4">
                   AI Voice Assistant
                 </h3>
                 <div className="flex justify-center">
-                  <div className="bg-sage-100 dark:bg-navy-700 rounded-full p-1 flex">
+                  <div className="relative bg-sage-100 dark:bg-navy-700 rounded-full p-1 flex">
+                    <div 
+                      className={`absolute top-1 bottom-1 bg-sage-600 rounded-full transition-all duration-300 ${
+                        selectedVoice === 'female' ? 'left-1 right-1/2' : 'left-1/2 right-1'
+                      }`}
+                    ></div>
                     <button
                       onClick={() => setSelectedVoice('female')}
-                      className={`flex items-center gap-2 px-6 py-3 rounded-full transition-all ${
+                      className={`relative z-10 flex items-center gap-2 px-6 py-3 rounded-full transition-all ${
                         selectedVoice === 'female'
-                          ? 'bg-sage-600 text-white shadow-md'
-                          : 'text-sage-600 dark:text-sage-300 hover:bg-sage-200 dark:hover:bg-navy-600'
+                          ? 'text-white'
+                          : 'text-sage-600 dark:text-sage-300'
                       }`}
                     >
                       <User className="w-4 h-4" />
@@ -372,10 +408,10 @@ export const HeroVoiceInteraction = () => {
                     </button>
                     <button
                       onClick={() => setSelectedVoice('male')}
-                      className={`flex items-center gap-2 px-6 py-3 rounded-full transition-all ${
+                      className={`relative z-10 flex items-center gap-2 px-6 py-3 rounded-full transition-all ${
                         selectedVoice === 'male'
-                          ? 'bg-sage-600 text-white shadow-md'
-                          : 'text-sage-600 dark:text-sage-300 hover:bg-sage-200 dark:hover:bg-navy-600'
+                          ? 'text-white'
+                          : 'text-sage-600 dark:text-sage-300'
                       }`}
                     >
                       <Users className="w-4 h-4" />
@@ -459,32 +495,61 @@ export const HeroVoiceInteraction = () => {
                     {selectedVoice === 'female' ? '👩' : '👨'} {selectedVoice} Voice
                   </Badge>
                 </div>
-                <Button onClick={resetConversation} variant="outline" disabled={isListening || isSpeaking}>
+                <Button 
+                  onClick={resetConversation} 
+                  variant="outline" 
+                  disabled={isProcessing}
+                  className="hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-700 dark:hover:text-red-300"
+                >
                   New Conversation
                 </Button>
               </div>
 
-              {/* Main Conversation Button with Gradient Animation */}
+              {/* Enhanced Listening Animation */}
               <div className="text-center">
                 <div className="relative flex items-center justify-center">
+                  {/* Outer pulse rings */}
+                  {isListening && (
+                    <>
+                      <div 
+                        className="absolute inset-0 rounded-full border-4 border-sage-300 dark:border-sage-500 animate-ping"
+                        style={{ 
+                          transform: `scale(${1.2 + audioLevel * 0.8})`,
+                          opacity: audioLevel * 0.6 
+                        }}
+                      ></div>
+                      <div 
+                        className="absolute inset-4 rounded-full border-2 border-sage-400 dark:border-sage-400 animate-ping" 
+                        style={{ 
+                          animationDelay: '0.5s', 
+                          transform: `scale(${1.1 + audioLevel * 0.6})`,
+                          opacity: audioLevel * 0.4 
+                        }}
+                      ></div>
+                    </>
+                  )}
+                  
+                  {/* Main button */}
                   <div 
                     className={`w-32 h-32 rounded-full transition-all duration-300 ${
                       isListening 
-                        ? 'bg-gradient-to-b from-white via-blue-200 to-blue-500 dark:from-gray-200 dark:via-blue-300 dark:to-blue-600 scale-110' 
+                        ? 'bg-gradient-to-br from-sage-400 via-sage-500 to-sage-700 dark:from-sage-500 dark:via-sage-600 dark:to-sage-800' 
                         : isProcessing
-                        ? 'bg-gradient-to-b from-yellow-200 via-yellow-400 to-yellow-600'
-                        : 'bg-gradient-to-b from-sage-400 via-sage-600 to-sage-800 hover:scale-105'
-                    } shadow-lg flex items-center justify-center cursor-pointer`}
-                    onClick={toggleListening}
+                        ? 'bg-gradient-to-br from-yellow-400 via-yellow-500 to-yellow-600'
+                        : 'bg-gradient-to-br from-sage-500 via-sage-600 to-sage-800 hover:scale-105'
+                    } shadow-xl flex items-center justify-center cursor-pointer`}
+                    onClick={!isProcessing ? toggleListening : undefined}
                     style={{
-                      transform: isListening ? `scale(${1.1 + audioLevel * 0.3})` : undefined,
-                      boxShadow: isListening ? `0 0 ${20 + audioLevel * 30}px rgba(59, 130, 246, 0.6)` : undefined
+                      transform: isListening ? `scale(${1.05 + audioLevel * 0.2})` : undefined,
+                      boxShadow: isListening 
+                        ? `0 0 ${30 + audioLevel * 40}px rgba(34, 197, 94, ${0.3 + audioLevel * 0.4})` 
+                        : undefined
                     }}
                   >
                     {isProcessing ? (
                       <div className="flex flex-col items-center text-white">
-                        <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        <span className="text-xs mt-2">Processing</span>
+                        <div className="w-8 h-8 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-xs mt-2 font-medium">Processing</span>
                       </div>
                     ) : isListening ? (
                       <MicOff className="w-12 h-12 text-white" />
@@ -492,42 +557,28 @@ export const HeroVoiceInteraction = () => {
                       <Mic className="w-12 h-12 text-white" />
                     )}
                   </div>
-                  
-                  {isListening && (
-                    <div className="absolute inset-0 rounded-full">
-                      <div 
-                        className="absolute inset-0 rounded-full border-4 border-blue-300 dark:border-blue-400 animate-ping"
-                        style={{ opacity: audioLevel * 0.8 }}
-                      ></div>
-                      <div 
-                        className="absolute inset-4 rounded-full border-2 border-blue-400 dark:border-blue-300 animate-ping" 
-                        style={{ animationDelay: '0.5s', opacity: audioLevel * 0.6 }}
-                      ></div>
-                    </div>
-                  )}
                 </div>
 
                 {/* Status Display */}
-                <div className="mt-4 min-h-[60px] flex flex-col justify-center">
+                <div className="mt-6 min-h-[80px] flex flex-col justify-center">
                   {isProcessing && (
                     <div className="flex items-center justify-center gap-2">
                       <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce"></div>
                       <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                       <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                      <span className="ml-2 text-sage-600 dark:text-sage-400">AI mentor is thinking...</span>
+                      <span className="ml-2 text-sage-600 dark:text-sage-400 font-medium">AI mentor is thinking...</span>
                     </div>
                   )}
                   
                   {isSpeaking && (
-                    <div className="flex items-center justify-center gap-2">
-                      <Volume2 className="w-4 h-4 text-sage-600 dark:text-sage-400 animate-pulse" />
-                      <span className="text-sage-600 dark:text-sage-400">AI mentor is speaking...</span>
+                    <div className="flex items-center justify-center gap-3">
+                      <Volume2 className="w-5 h-5 text-sage-600 dark:text-sage-400 animate-pulse" />
+                      <span className="text-sage-600 dark:text-sage-400 font-medium">AI mentor is speaking...</span>
                       <Button
                         onClick={stopSpeaking}
                         variant="outline"
                         size="sm"
-                        className="ml-2 border-red-300 text-red-600 hover:bg-red-50"
-                        disabled={!isSpeaking}
+                        className="ml-2 border-red-300 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                       >
                         <VolumeX className="w-3 h-3" />
                       </Button>
@@ -536,21 +587,27 @@ export const HeroVoiceInteraction = () => {
                   
                   {isListening && (
                     <div className="text-center">
-                      <Badge className="bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300 mb-2 animate-pulse">
-                        Listening...
+                      <Badge className="bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-300 mb-3 animate-pulse px-4 py-2">
+                        🎤 Listening...
                       </Badge>
-                      <p className="text-sage-600 dark:text-sage-400 text-sm">
+                      <p className="text-sage-600 dark:text-sage-400 text-sm font-medium">
                         Speak now - Your mentor will respond automatically
                       </p>
+                      <div className="mt-2 bg-green-100 dark:bg-green-900/30 rounded-full h-2 w-32 mx-auto overflow-hidden">
+                        <div 
+                          className="bg-green-500 h-full transition-all duration-100"
+                          style={{ width: `${audioLevel * 100}%` }}
+                        ></div>
+                      </div>
                     </div>
                   )}
                   
                   {!isListening && !isProcessing && !isSpeaking && (
                     <div className="text-center">
-                      <Badge className="bg-sage-100 dark:bg-sage-800 text-sage-700 dark:text-sage-300 mb-2">
+                      <Badge className="bg-sage-100 dark:bg-sage-800 text-sage-700 dark:text-sage-300 mb-3 px-4 py-2">
                         Ready to Listen
                       </Badge>
-                      <p className="text-sage-600 dark:text-sage-400 text-sm">
+                      <p className="text-sage-600 dark:text-sage-400 text-sm font-medium">
                         Click the microphone to continue your practice session
                       </p>
                     </div>
