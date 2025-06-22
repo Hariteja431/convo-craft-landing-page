@@ -30,10 +30,10 @@ export class GeminiService {
       body: JSON.stringify({
         contents: messages,
         generationConfig: {
-          temperature: 0.8,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 512, // Reduced for faster responses
+          temperature: 0.7,
+          topK: 30,
+          topP: 0.85,
+          maxOutputTokens: 256, // Reduced for shorter responses
         },
       }),
     });
@@ -49,14 +49,20 @@ export class GeminiService {
     console.log('Getting realtime response for:', userMessage);
     
     const languageInstruction = selectedLanguage && selectedLanguage !== 'en' 
-      ? `IMPORTANT: Respond ONLY in ${this.getLanguageName(selectedLanguage)}. Do not use English in your response.` 
+      ? `CRITICAL: Respond ONLY in ${this.getLanguageName(selectedLanguage)}. Never use English words or phrases.` 
       : '';
     
-    const systemPrompt = customPrompt || `You are a helpful AI conversation partner and communication mentor. 
+    const systemPrompt = customPrompt || `You are a friendly, encouraging AI conversation mentor. 
     ${languageInstruction}
-    Respond naturally and conversationally in 1-2 sentences. Keep responses brief and engaging for real-time speech conversation.
-    Always end with an engaging question or prompt that encourages the user to continue speaking and share more.
-    Be supportive, encouraging, and help improve their communication skills through natural conversation.`;
+    
+    RESPONSE STYLE:
+    - Keep responses to 1-2 SHORT sentences (15-25 words max)
+    - Be warm, supportive, and engaging
+    - Sound natural and conversational, not robotic
+    - ALWAYS end with a follow-up question or prompt that encourages more speaking
+    - Use varied conversation starters like "What do you think about...", "Have you ever...", "Tell me more about...", "How would you describe..."
+    - Be genuinely curious about their thoughts and experiences
+    - Avoid repetitive phrases`;
     
     const messages: GeminiMessage[] = [
       {
@@ -72,13 +78,13 @@ export class GeminiService {
 
     try {
       const result = await this.makeRequest(messages);
-      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || 'That sounds interesting! Can you tell me more about that?';
+      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || 'That\'s interesting! What made you think of that?';
       
       console.log('Gemini realtime response:', response);
       return response;
     } catch (error) {
       console.error('Error getting realtime response:', error);
-      return 'I hear you. What else would you like to explore about this topic?';
+      return 'I hear you! Can you tell me more about that?';
     }
   }
 
@@ -87,13 +93,16 @@ export class GeminiService {
     
     const languageName = this.getLanguageName(selectedLanguage || 'en');
     const languageInstruction = selectedLanguage && selectedLanguage !== 'en' 
-      ? `IMPORTANT: Respond ONLY in ${languageName}. Do not use English in your response.` 
+      ? `CRITICAL: Respond ONLY in ${languageName}. Never use English words or phrases.` 
       : '';
     
     const contextualPrompt = `${languageInstruction}
-    You are an expert communication mentor for ${selectedTopic || 'conversation practice'} in ${languageName}. 
-    Greet the user warmly and ask them what specific aspect of ${selectedTopic || 'communication'} they'd like to work on today.
-    Keep it conversational and encouraging. End with a question that gets them talking.`;
+    
+    You are a warm, friendly AI mentor for ${selectedTopic || 'conversation practice'} in ${languageName}. 
+    
+    Start with a brief, enthusiastic greeting (1-2 sentences max). Ask an engaging question about ${selectedTopic || 'their goals'} that gets them talking immediately.
+    
+    Be conversational, not formal. Sound like a supportive friend, not a teacher.`;
     
     const messages: GeminiMessage[] = [
       {
@@ -104,34 +113,41 @@ export class GeminiService {
 
     try {
       const result = await this.makeRequest(messages);
-      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || 'Hello! I\'m ready to help you practice. How can I assist you today?';
+      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || 'Hi there! I\'m excited to practice with you. What would you like to work on today?';
       console.log('Gemini response:', response);
       return response;
     } catch (error) {
       console.error('Error starting conversation:', error);
-      return 'Hi there! I\'m your communication mentor. What would you like to work on together?';
+      return 'Hello! Ready to have a great conversation? What interests you most today?';
     }
   }
 
   static async continueConversation(userMessage: string, conversationHistory: GeminiMessage[], selectedLanguage?: string, selectedTopic?: string): Promise<ConversationResponse> {
     const languageName = this.getLanguageName(selectedLanguage || 'en');
     const languageInstruction = selectedLanguage && selectedLanguage !== 'en' 
-      ? `IMPORTANT: Respond ONLY in ${languageName}. Do not use English in your response.` 
+      ? `CRITICAL: Respond ONLY in ${languageName}. Never use English words or phrases.` 
       : '';
     
     const mentorPrompt = `${languageInstruction}
-    You are an expert communication mentor helping someone practice ${selectedTopic?.toLowerCase() || 'conversation'} in ${languageName}. 
-    Respond naturally to the user's message, then ask an engaging follow-up question that helps them practice more. 
-    Be encouraging and supportive. Keep responses conversational but valuable as a mentor.
-    Always end with a question or prompt that encourages continued speaking.`;
+    
+    You are a supportive conversation mentor for ${selectedTopic?.toLowerCase() || 'conversation practice'} in ${languageName}. 
+    
+    GUIDELINES:
+    - Keep responses SHORT (1-2 sentences, 15-25 words)
+    - Respond naturally to what they said first
+    - ALWAYS end with an engaging follow-up question
+    - Be encouraging and show genuine interest
+    - Use varied question starters: "What's your take on...", "How do you feel about...", "Have you noticed...", "What would you do if..."
+    - Sound like a friendly conversation partner, not a formal teacher
+    - Keep the conversation flowing naturally`;
     
     const response = await this.getRealtimeResponse(userMessage, conversationHistory, mentorPrompt, selectedLanguage);
     
     return {
       response,
       feedback: {
-        grammar: 'Excellent structure!',
-        pronunciation: 'Clear and confident',
+        grammar: 'Great structure!',
+        pronunciation: 'Clear delivery',
         fluency: 'Natural flow!'
       }
     };
@@ -139,24 +155,24 @@ export class GeminiService {
 
   static async getFeedback(userMessage: string): Promise<{ grammar: string; pronunciation: string; fluency: string }> {
     return {
-      grammar: 'Well structured and clear!',
-      pronunciation: 'Confident delivery',
-      fluency: 'Smooth conversational flow!'
+      grammar: 'Excellent communication!',
+      pronunciation: 'Clear and confident',
+      fluency: 'Very natural!'
     };
   }
 
   private static getLanguageName(languageCode: string): string {
     const languageMap: { [key: string]: string } = {
       'en': 'English',
-      'es': 'Spanish',
-      'fr': 'French',
-      'de': 'German',
-      'it': 'Italian',
-      'pt': 'Portuguese',
-      'zh': 'Chinese',
-      'ja': 'Japanese',
-      'ko': 'Korean',
-      'ar': 'Arabic'
+      'es': 'Spanish (Español)',
+      'fr': 'French (Français)',
+      'de': 'German (Deutsch)',
+      'it': 'Italian (Italiano)',
+      'pt': 'Portuguese (Português)',
+      'zh': 'Chinese (中文)',
+      'ja': 'Japanese (日本語)',
+      'ko': 'Korean (한국어)',
+      'ar': 'Arabic (العربية)'
     };
     return languageMap[languageCode] || 'English';
   }

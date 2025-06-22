@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -196,7 +197,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Pricing Section */}
+      {/* Pricing Section - Updated with sage theme */}
       <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8 bg-sage-50 dark:bg-navy-900">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
@@ -230,7 +231,7 @@ const Index = () => {
             </div>
             
             {billingPeriod === 'yearly' && (
-              <p className="text-sm text-purple-600 dark:text-purple-400 mb-8">
+              <p className="text-sm text-sage-600 dark:text-sage-400 mb-8">
                 Save 10% with yearly billing
               </p>
             )}
@@ -253,7 +254,7 @@ const Index = () => {
                     'Community support'
                   ].map((feature, idx) => (
                     <li key={idx} className="flex items-center text-sage-600 dark:text-sage-400">
-                      <CheckCircle className="w-5 h-5 text-purple-500 mr-3" />
+                      <CheckCircle className="w-5 h-5 text-sage-500 mr-3" />
                       {feature}
                     </li>
                   ))}
@@ -265,9 +266,9 @@ const Index = () => {
             </Card>
 
             {/* Pro Plan */}
-            <Card className="relative bg-white dark:bg-navy-800 border-2 border-purple-400 dark:border-purple-500 rounded-2xl shadow-xl">
+            <Card className="relative bg-white dark:bg-navy-800 border-2 border-sage-500 dark:border-sage-400 rounded-2xl shadow-xl">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-1 text-sm">
+                <Badge className="bg-gradient-to-r from-sage-600 to-sage-700 text-white px-4 py-1 text-sm">
                   ⭐ Best for Fluency Practice
                 </Badge>
               </div>
@@ -291,12 +292,12 @@ const Index = () => {
                     'Priority email support'
                   ].map((feature, idx) => (
                     <li key={idx} className="flex items-center text-sage-600 dark:text-sage-400">
-                      <CheckCircle className="w-5 h-5 text-purple-500 mr-3" />
+                      <CheckCircle className="w-5 h-5 text-sage-600 mr-3" />
                       {feature}
                     </li>
                   ))}
                 </ul>
-                <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold">
+                <Button className="w-full bg-gradient-to-r from-sage-600 to-sage-700 hover:from-sage-700 hover:to-sage-800 text-white font-semibold">
                   Start Pro Trial
                 </Button>
               </CardContent>

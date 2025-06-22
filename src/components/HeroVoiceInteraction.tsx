@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -76,8 +77,21 @@ export const HeroVoiceInteraction = () => {
 
   // Cleanup when component unmounts or user leaves
   useEffect(() => {
+    const handleBeforeUnload = () => {
+      cleanupAudio();
+    };
+
+    const handlePopState = () => {
+      cleanupAudio();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+
     return () => {
       cleanupAudio();
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
     };
   }, []);
 
@@ -140,7 +154,7 @@ export const HeroVoiceInteraction = () => {
             speakText(result.response);
           } catch (error) {
             console.error('Error getting AI response:', error);
-            const errorMessage = 'I understand. Could you elaborate on that?';
+            const errorMessage = 'I understand. Could you tell me more?';
             const aiTurn: ConversationTurn = {
               speaker: 'ai',
               message: errorMessage,
@@ -219,52 +233,32 @@ export const HeroVoiceInteraction = () => {
         
         let selectedVoiceObj;
         
-        // Enhanced voice selection with language support
+        // Enhanced voice selection with better quality voices
         if (selectedVoice === 'female') {
+          const femalePatterns = [
+            'zira', 'susan', 'catherine', 'samantha', 'karen', 'victoria', 'anna', 'emma', 
+            'serena', 'aria', 'allison', 'ava', 'kate', 'helena', 'monica', 'paloma', 
+            'paulina', 'female', 'woman', 'amélie', 'claire', 'marie', 'céline', 'petra',
+            'marlene', 'helena', 'alice', 'luciana', 'federica', 'silvia', 'joana', 
+            'catarina', 'mei-jia', 'sin-ji', 'yuki', 'kyoko', 'misaki', 'nayeon'
+          ];
+          
           selectedVoiceObj = voices.find(voice => 
             voice.lang.startsWith(selectedLanguage) &&
-            (voice.name.toLowerCase().includes('female') ||
-             voice.name.toLowerCase().includes('samantha') ||
-             voice.name.toLowerCase().includes('karen') ||
-             voice.name.toLowerCase().includes('victoria') ||
-             voice.name.toLowerCase().includes('zira') ||
-             voice.name.toLowerCase().includes('susan') ||
-             voice.name.toLowerCase().includes('anna') ||
-             voice.name.toLowerCase().includes('emma') ||
-             voice.name.toLowerCase().includes('serena') ||
-             voice.name.toLowerCase().includes('aria') ||
-             voice.name.toLowerCase().includes('allison') ||
-             voice.name.toLowerCase().includes('ava') ||
-             voice.name.toLowerCase().includes('kate') ||
-             voice.name.toLowerCase().includes('helena') ||
-             voice.name.toLowerCase().includes('monica') ||
-             voice.name.toLowerCase().includes('paloma') ||
-             voice.name.toLowerCase().includes('paulina')) &&
-            !voice.name.toLowerCase().includes('male')
-          ) || voices.find(voice => 
-            voice.lang.startsWith(selectedLanguage) && 
+            femalePatterns.some(pattern => voice.name.toLowerCase().includes(pattern)) &&
             !voice.name.toLowerCase().includes('male')
           );
         } else {
+          const malePatterns = [
+            'david', 'mark', 'james', 'ryan', 'aaron', 'nathan', 'fred', 'jorge', 
+            'diego', 'carlos', 'male', 'man', 'thomas', 'alex', 'daniel', 'tom',
+            'bruno', 'henri', 'paul', 'antoine', 'stefan', 'ralf', 'giorgio', 
+            'luca', 'felipe', 'rafael', 'huang', 'xiaofeng', 'takeshi', 'kenji'
+          ];
+          
           selectedVoiceObj = voices.find(voice => 
             voice.lang.startsWith(selectedLanguage) &&
-            (voice.name.toLowerCase().includes('male') ||
-             voice.name.toLowerCase().includes('daniel') ||
-             voice.name.toLowerCase().includes('alex') ||
-             voice.name.toLowerCase().includes('tom') ||
-             voice.name.toLowerCase().includes('david') ||
-             voice.name.toLowerCase().includes('mark') ||
-             voice.name.toLowerCase().includes('james') ||
-             voice.name.toLowerCase().includes('ryan') ||
-             voice.name.toLowerCase().includes('aaron') ||
-             voice.name.toLowerCase().includes('nathan') ||
-             voice.name.toLowerCase().includes('fred') ||
-             voice.name.toLowerCase().includes('jorge') ||
-             voice.name.toLowerCase().includes('diego') ||
-             voice.name.toLowerCase().includes('carlos'))
-          ) || voices.find(voice => 
-            voice.lang.startsWith(selectedLanguage) && 
-            voice.name.toLowerCase().includes('male')
+            malePatterns.some(pattern => voice.name.toLowerCase().includes(pattern))
           );
         }
         
@@ -275,11 +269,13 @@ export const HeroVoiceInteraction = () => {
         
         if (selectedVoiceObj) {
           utterance.voice = selectedVoiceObj;
+          console.log('Selected voice:', selectedVoiceObj.name);
         }
         
-        utterance.rate = 0.9;
-        utterance.pitch = selectedVoice === 'female' ? 1.2 : 0.8;
-        utterance.volume = 0.85;
+        // Enhanced voice settings for more natural speech
+        utterance.rate = 0.85; // Slightly slower for more natural pace
+        utterance.pitch = selectedVoice === 'female' ? 1.1 : 0.9; // More subtle pitch differences
+        utterance.volume = 0.9; // Slightly higher volume for clarity
         utterance.lang = langCode;
         
         utterance.onstart = () => setIsSpeaking(true);
@@ -289,7 +285,7 @@ export const HeroVoiceInteraction = () => {
             if (!isListening && !isProcessing && hasStarted) {
               startListening();
             }
-          }, 500);
+          }, 800); // Slightly longer pause for more natural conversation flow
         };
         utterance.onerror = () => setIsSpeaking(false);
         
@@ -519,10 +515,10 @@ export const HeroVoiceInteraction = () => {
                 </Button>
               </div>
 
-              {/* Enhanced Listening Animation */}
+              {/* Enhanced Listening Animation with Theme Colors */}
               <div className="text-center">
                 <div className="relative flex items-center justify-center">
-                  {/* Animated listening rings */}
+                  {/* Animated listening rings using sage theme */}
                   {isListening && (
                     <>
                       <div 
@@ -543,20 +539,20 @@ export const HeroVoiceInteraction = () => {
                     </>
                   )}
                   
-                  {/* Main button */}
+                  {/* Main button with sage theme */}
                   <div 
                     className={`w-32 h-32 rounded-full transition-all duration-300 ${
                       isListening 
                         ? 'bg-gradient-to-br from-sage-400 via-sage-500 to-sage-700 dark:from-sage-500 dark:via-sage-600 dark:to-sage-800' 
                         : isProcessing
-                        ? 'bg-gradient-to-br from-yellow-400 via-yellow-500 to-yellow-600'
+                        ? 'bg-gradient-to-br from-sage-300 via-sage-400 to-sage-600'
                         : 'bg-gradient-to-br from-sage-500 via-sage-600 to-sage-800 hover:scale-105'
                     } shadow-xl flex items-center justify-center cursor-pointer`}
                     onClick={!isProcessing ? toggleListening : undefined}
                     style={{
                       transform: isListening ? `scale(${1.05 + audioLevel * 0.2})` : undefined,
                       boxShadow: isListening 
-                        ? `0 0 ${30 + audioLevel * 40}px rgba(34, 197, 94, ${0.3 + audioLevel * 0.4})` 
+                        ? `0 0 ${30 + audioLevel * 40}px rgba(113, 163, 137, ${0.3 + audioLevel * 0.4})` 
                         : undefined
                     }}
                   >
@@ -601,15 +597,15 @@ export const HeroVoiceInteraction = () => {
                   
                   {isListening && (
                     <div className="text-center">
-                      <Badge className="bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-300 mb-3 animate-pulse px-4 py-2">
+                      <Badge className="bg-sage-100 dark:bg-sage-800 text-sage-700 dark:text-sage-300 mb-3 animate-pulse px-4 py-2">
                         🎤 Listening...
                       </Badge>
                       <p className="text-sage-600 dark:text-sage-400 text-sm font-medium">
                         Speak now in {LANGUAGES.find(l => l.code === selectedLanguage)?.name} - Your mentor will respond automatically
                       </p>
-                      <div className="mt-2 bg-green-100 dark:bg-green-900/30 rounded-full h-2 w-32 mx-auto overflow-hidden">
+                      <div className="mt-2 bg-sage-100 dark:bg-sage-900/30 rounded-full h-2 w-32 mx-auto overflow-hidden">
                         <div 
-                          className="bg-green-500 h-full transition-all duration-100"
+                          className="bg-sage-500 h-full transition-all duration-100"
                           style={{ width: `${audioLevel * 100}%` }}
                         ></div>
                       </div>
