@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Mic, MicOff, Volume2, VolumeX, User, Users, MessageCircle } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { GeminiService, GeminiMessage } from '@/services/geminiService';
 
 interface ConversationTurn {
@@ -14,35 +15,62 @@ interface ConversationTurn {
   timestamp: Date;
 }
 
+const PRACTICE_SCENARIOS = [
+  'Casual Conversation',
+  'Job Interview Practice',
+  'Business Meeting',
+  'Public Speaking',
+  'Presentation Skills',
+  'Podcast Interview',
+  'Customer Service',
+  'Sales Pitch',
+  'Academic Discussion',
+  'Debate Practice',
+  'Storytelling'
+];
+
+const LANGUAGES = [
+  { code: 'en', name: 'English' },
+  { code: 'es', name: 'Spanish' },
+  { code: 'fr', name: 'French' },
+  { code: 'de', name: 'German' },
+  { code: 'it', name: 'Italian' },
+  { code: 'pt', name: 'Portuguese' },
+  { code: 'zh', name: 'Chinese' },
+  { code: 'ja', name: 'Japanese' },
+  { code: 'ko', name: 'Korean' },
+  { code: 'ar', name: 'Arabic' }
+];
+
 export const HeroVoiceInteraction = () => {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [selectedVoice, setSelectedVoice] = useState<'female' | 'male'>('female');
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [selectedTopic, setSelectedTopic] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [conversation, setConversation] = useState<ConversationTurn[]>([]);
   const [conversationHistory, setConversationHistory] = useState<GeminiMessage[]>([]);
+  const [hasStarted, setHasStarted] = useState(false);
   
   const recognition = useRef<SpeechRecognition | null>(null);
   const currentUtterance = useRef<SpeechSynthesisUtterance | null>(null);
-  const silenceTimer = useRef<NodeJS.Timeout | null>(null);
 
-  // Initialize speech recognition with auto-detection
+  // Initialize speech recognition
   useEffect(() => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       recognition.current = new SpeechRecognition();
       recognition.current.continuous = true;
       recognition.current.interimResults = true;
-      recognition.current.lang = 'en-US';
+      recognition.current.lang = selectedLanguage + '-US';
 
       recognition.current.onresult = async (event) => {
         const transcript = event.results[event.results.length - 1][0].transcript.trim();
         
-        // Only process if it's a final result
         if (event.results[event.results.length - 1].isFinal && transcript.length > 0) {
           console.log('Final transcript:', transcript);
           
-          // Add user message to conversation
           const userTurn: ConversationTurn = {
             speaker: 'user',
             message: transcript,
@@ -50,13 +78,11 @@ export const HeroVoiceInteraction = () => {
           };
           setConversation(prev => [...prev, userTurn]);
           
-          // Stop listening and start processing
           setIsListening(false);
           setIsProcessing(true);
           recognition.current?.stop();
           
           try {
-            // Add to conversation history
             const newUserMessage: GeminiMessage = {
               role: 'user',
               parts: [{ text: transcript }]
@@ -64,7 +90,6 @@ export const HeroVoiceInteraction = () => {
             
             const response = await GeminiService.getRealtimeResponse(transcript, conversationHistory);
             
-            // Add AI response to conversation
             const aiTurn: ConversationTurn = {
               speaker: 'ai',
               message: response,
@@ -72,14 +97,12 @@ export const HeroVoiceInteraction = () => {
             };
             setConversation(prev => [...prev, aiTurn]);
             
-            // Update conversation history
             const aiMessage: GeminiMessage = {
               role: 'model',
               parts: [{ text: response }]
             };
             setConversationHistory(prev => [...prev, newUserMessage, aiMessage]);
             
-            // Speak the response
             speakText(response);
           } catch (error) {
             console.error('Error getting AI response:', error);
@@ -98,7 +121,7 @@ export const HeroVoiceInteraction = () => {
       };
 
       recognition.current.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
+        console.error('Speech recognition error:', event);
         setIsListening(false);
         setIsProcessing(false);
       };
@@ -107,7 +130,7 @@ export const HeroVoiceInteraction = () => {
         setIsListening(false);
       };
     }
-  }, [conversationHistory]);
+  }, [conversationHistory, selectedLanguage]);
 
   const speakText = (text: string) => {
     if ('speechSynthesis' in window) {
@@ -115,7 +138,6 @@ export const HeroVoiceInteraction = () => {
       
       const utterance = new SpeechSynthesisUtterance(text);
       
-      // Enhanced voice selection
       const voices = speechSynthesis.getVoices();
       let selectedVoiceObj;
       
@@ -145,14 +167,13 @@ export const HeroVoiceInteraction = () => {
         utterance.voice = selectedVoiceObj;
       }
       
-      utterance.rate = 1.0; // Normal speed for clarity
+      utterance.rate = 1.0;
       utterance.pitch = selectedVoice === 'female' ? 1.1 : 0.9;
       utterance.volume = 0.9;
       
       utterance.onstart = () => setIsSpeaking(true);
       utterance.onend = () => {
         setIsSpeaking(false);
-        // Auto-start listening after AI finishes speaking
         setTimeout(() => {
           if (!isListening && !isProcessing) {
             startListening();
@@ -200,9 +221,19 @@ export const HeroVoiceInteraction = () => {
   };
 
   const startConversation = async () => {
+    if (!selectedTopic || !selectedLanguage) {
+      alert('Please select both language and conversation topic');
+      return;
+    }
+
     try {
       setIsProcessing(true);
-      const response = await GeminiService.startConversation('general conversation');
+      setHasStarted(true);
+      
+      const languageName = LANGUAGES.find(lang => lang.code === selectedLanguage)?.name || 'English';
+      const greetingPrompt = `Start a ${selectedTopic.toLowerCase()} conversation in ${languageName}. Greet the user and ask how you can help them with ${selectedTopic.toLowerCase()}. Keep it brief and natural.`;
+      
+      const response = await GeminiService.startConversation(greetingPrompt);
       
       const aiTurn: ConversationTurn = {
         speaker: 'ai',
@@ -225,141 +256,231 @@ export const HeroVoiceInteraction = () => {
     }
   };
 
+  const resetConversation = () => {
+    setConversation([]);
+    setConversationHistory([]);
+    setHasStarted(false);
+    stopSpeaking();
+    stopListening();
+  };
+
   return (
-    <div className="relative">
-      <Card className="bg-white dark:bg-navy-800 rounded-2xl p-8 shadow-2xl border border-sage-200 dark:border-navy-700">
-        <CardContent className="space-y-6">
-          {/* Voice Selection */}
-          <div className="text-center">
-            <h3 className="text-lg font-semibold text-sage-900 dark:text-sage-100 mb-4">
-              Choose AI Voice
-            </h3>
-            <RadioGroup 
-              value={selectedVoice} 
-              onValueChange={(value) => setSelectedVoice(value as 'female' | 'male')}
-              className="flex justify-center gap-8"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="female" id="female" />
-                <Label htmlFor="female" className="flex items-center gap-2 text-sage-700 dark:text-sage-300 cursor-pointer">
-                  <User className="w-4 h-4" />
-                  Female Voice
-                </Label>
+    <div className="max-w-4xl mx-auto p-6">
+      <Card className="bg-white dark:bg-navy-800 rounded-2xl shadow-2xl border border-sage-200 dark:border-navy-700">
+        <CardContent className="p-8 space-y-8">
+          {/* Settings Section */}
+          {!hasStarted && (
+            <div className="space-y-6">
+              <div className="text-center">
+                <h2 className="text-3xl font-bold text-sage-900 dark:text-sage-100 mb-2">
+                  Start Your Conversation Practice
+                </h2>
+                <p className="text-sage-600 dark:text-sage-400">
+                  Choose your preferences and start practicing
+                </p>
               </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="male" id="male" />
-                <Label htmlFor="male" className="flex items-center gap-2 text-sage-700 dark:text-sage-300 cursor-pointer">
-                  <Users className="w-4 h-4" />
-                  Male Voice
-                </Label>
-              </div>
-            </RadioGroup>
-          </div>
 
-          {/* Main Interaction Area */}
-          <div className="flex flex-col items-center space-y-4">
-            <div className="relative">
-              <Button
-                onClick={conversation.length === 0 ? startConversation : toggleListening}
-                disabled={isProcessing}
-                className={`w-32 h-32 rounded-full transition-all duration-300 ${
-                  isListening 
-                    ? 'bg-red-500 hover:bg-red-600 animate-pulse scale-110' 
-                    : isProcessing
-                    ? 'bg-yellow-500 hover:bg-yellow-600'
-                    : 'bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700 hover:scale-105'
-                } text-white shadow-lg`}
-              >
-                {isProcessing ? (
-                  <div className="flex flex-col items-center">
-                    <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span className="text-xs mt-2">Processing</span>
+              {/* Voice Selection Toggle */}
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-sage-900 dark:text-sage-100 mb-4">
+                  AI Voice Assistant
+                </h3>
+                <div className="flex justify-center">
+                  <div className="bg-sage-100 dark:bg-navy-700 rounded-full p-1 flex">
+                    <button
+                      onClick={() => setSelectedVoice('female')}
+                      className={`flex items-center gap-2 px-6 py-3 rounded-full transition-all ${
+                        selectedVoice === 'female'
+                          ? 'bg-sage-600 text-white shadow-md'
+                          : 'text-sage-600 dark:text-sage-300 hover:bg-sage-200 dark:hover:bg-navy-600'
+                      }`}
+                    >
+                      <User className="w-4 h-4" />
+                      Female Voice
+                    </button>
+                    <button
+                      onClick={() => setSelectedVoice('male')}
+                      className={`flex items-center gap-2 px-6 py-3 rounded-full transition-all ${
+                        selectedVoice === 'male'
+                          ? 'bg-sage-600 text-white shadow-md'
+                          : 'text-sage-600 dark:text-sage-300 hover:bg-sage-200 dark:hover:bg-navy-600'
+                      }`}
+                    >
+                      <Users className="w-4 h-4" />
+                      Male Voice
+                    </button>
                   </div>
-                ) : isListening ? (
-                  <MicOff className="w-12 h-12" />
-                ) : conversation.length === 0 ? (
-                  <div className="flex flex-col items-center">
-                    <MessageCircle className="w-12 h-12" />
-                    <span className="text-xs mt-2">Start Chat</span>
-                  </div>
-                ) : (
-                  <Mic className="w-12 h-12" />
-                )}
-              </Button>
-              
-              {/* Animated rings during listening */}
-              {isListening && (
-                <div className="absolute inset-0 rounded-full">
-                  <div className="absolute inset-0 rounded-full border-4 border-red-300 animate-ping"></div>
-                  <div className="absolute inset-4 rounded-full border-2 border-red-400 animate-ping" style={{ animationDelay: '0.5s' }}></div>
                 </div>
-              )}
+              </div>
+
+              {/* Language and Topic Selection */}
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <Label className="text-lg font-medium text-sage-900 dark:text-sage-100 mb-3 block">
+                    Practice Language
+                  </Label>
+                  <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                    <SelectTrigger className="h-12 text-lg">
+                      <SelectValue placeholder="Choose language" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {LANGUAGES.map((lang) => (
+                        <SelectItem key={lang.code} value={lang.code}>
+                          {lang.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="text-lg font-medium text-sage-900 dark:text-sage-100 mb-3 block">
+                    Conversation Topic
+                  </Label>
+                  <Select value={selectedTopic} onValueChange={setSelectedTopic}>
+                    <SelectTrigger className="h-12 text-lg">
+                      <SelectValue placeholder="Choose topic" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PRACTICE_SCENARIOS.map((scenario) => (
+                        <SelectItem key={scenario} value={scenario}>
+                          {scenario}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Start Button */}
+              <div className="text-center">
+                <Button
+                  onClick={startConversation}
+                  disabled={!selectedTopic || !selectedLanguage || isProcessing}
+                  className="w-64 h-16 text-xl bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700 text-white rounded-xl"
+                >
+                  {isProcessing ? (
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Starting...
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <MessageCircle className="w-6 h-6" />
+                      Start Conversation
+                    </div>
+                  )}
+                </Button>
+              </div>
             </div>
+          )}
 
-            {/* Status Display */}
-            <div className="text-center min-h-[60px] flex flex-col justify-center">
-              {isProcessing && (
-                <div className="flex items-center justify-center gap-2">
-                  <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                  <span className="ml-2 text-sage-600 dark:text-sage-400">AI is thinking...</span>
+          {/* Conversation Interface */}
+          {hasStarted && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <Badge className="bg-sage-100 dark:bg-sage-800 text-sage-700 dark:text-sage-300">
+                    {selectedTopic} • {LANGUAGES.find(l => l.code === selectedLanguage)?.name}
+                  </Badge>
+                  <Badge className="ml-2 bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300">
+                    {selectedVoice === 'female' ? '👩' : '👨'} {selectedVoice} Voice
+                  </Badge>
                 </div>
-              )}
-              
-              {isSpeaking && (
-                <div className="flex items-center justify-center gap-2">
-                  <Volume2 className="w-4 h-4 text-sage-600 dark:text-sage-400 animate-pulse" />
-                  <span className="text-sage-600 dark:text-sage-400">AI is speaking...</span>
+                <Button onClick={resetConversation} variant="outline">
+                  New Conversation
+                </Button>
+              </div>
+
+              {/* Main Conversation Button */}
+              <div className="text-center">
+                <div className="relative">
                   <Button
-                    onClick={stopSpeaking}
-                    variant="outline"
-                    size="sm"
-                    className="ml-2 border-red-300 text-red-600 hover:bg-red-50"
+                    onClick={toggleListening}
+                    disabled={isProcessing}
+                    className={`w-32 h-32 rounded-full transition-all duration-300 ${
+                      isListening 
+                        ? 'bg-red-500 hover:bg-red-600 animate-pulse scale-110' 
+                        : isProcessing
+                        ? 'bg-yellow-500 hover:bg-yellow-600'
+                        : 'bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700 hover:scale-105'
+                    } text-white shadow-lg`}
                   >
-                    <VolumeX className="w-3 h-3" />
+                    {isProcessing ? (
+                      <div className="flex flex-col items-center">
+                        <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-xs mt-2">Processing</span>
+                      </div>
+                    ) : isListening ? (
+                      <MicOff className="w-12 h-12" />
+                    ) : (
+                      <Mic className="w-12 h-12" />
+                    )}
                   </Button>
+                  
+                  {isListening && (
+                    <div className="absolute inset-0 rounded-full">
+                      <div className="absolute inset-0 rounded-full border-4 border-red-300 animate-ping"></div>
+                      <div className="absolute inset-4 rounded-full border-2 border-red-400 animate-ping" style={{ animationDelay: '0.5s' }}></div>
+                    </div>
+                  )}
                 </div>
-              )}
-              
-              {isListening && (
-                <div className="text-center">
-                  <Badge className="bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-300 mb-2 animate-pulse">
-                    Listening...
-                  </Badge>
-                  <p className="text-sage-600 dark:text-sage-400 text-sm">
-                    Speak now - I'll respond automatically
-                  </p>
-                </div>
-              )}
-              
-              {!isListening && !isProcessing && !isSpeaking && conversation.length > 0 && (
-                <div className="text-center">
-                  <Badge className="bg-sage-100 dark:bg-sage-800 text-sage-700 dark:text-sage-300 mb-2">
-                    Ready to Listen
-                  </Badge>
-                  <p className="text-sage-600 dark:text-sage-400 text-sm">
-                    Click the microphone to continue talking
-                  </p>
-                </div>
-              )}
 
-              {!isListening && !isProcessing && !isSpeaking && conversation.length === 0 && (
-                <div className="text-center">
-                  <Badge className="bg-sage-100 dark:bg-sage-800 text-sage-700 dark:text-sage-300 mb-2">
-                    {selectedVoice === 'female' ? 'Female' : 'Male'} Assistant Ready
-                  </Badge>
-                  <p className="text-sage-600 dark:text-sage-400 text-sm">
-                    Click to start a real-time conversation
-                  </p>
+                {/* Status Display */}
+                <div className="mt-4 min-h-[60px] flex flex-col justify-center">
+                  {isProcessing && (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                      <span className="ml-2 text-sage-600 dark:text-sage-400">AI is thinking...</span>
+                    </div>
+                  )}
+                  
+                  {isSpeaking && (
+                    <div className="flex items-center justify-center gap-2">
+                      <Volume2 className="w-4 h-4 text-sage-600 dark:text-sage-400 animate-pulse" />
+                      <span className="text-sage-600 dark:text-sage-400">AI is speaking...</span>
+                      <Button
+                        onClick={stopSpeaking}
+                        variant="outline"
+                        size="sm"
+                        className="ml-2 border-red-300 text-red-600 hover:bg-red-50"
+                      >
+                        <VolumeX className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {isListening && (
+                    <div className="text-center">
+                      <Badge className="bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-300 mb-2 animate-pulse">
+                        Listening...
+                      </Badge>
+                      <p className="text-sage-600 dark:text-sage-400 text-sm">
+                        Speak now - I'll respond automatically
+                      </p>
+                    </div>
+                  )}
+                  
+                  {!isListening && !isProcessing && !isSpeaking && (
+                    <div className="text-center">
+                      <Badge className="bg-sage-100 dark:bg-sage-800 text-sage-700 dark:text-sage-300 mb-2">
+                        Ready to Listen
+                      </Badge>
+                      <p className="text-sage-600 dark:text-sage-400 text-sm">
+                        Click the microphone to continue talking
+                      </p>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Real-time Conversation Display */}
+          {/* Live Conversation Display */}
           {conversation.length > 0 && (
-            <div className="w-full max-w-2xl mx-auto">
+            <div className="w-full">
               <h4 className="text-lg font-semibold text-sage-900 dark:text-sage-100 mb-4 text-center">
                 Live Conversation
               </h4>

@@ -1,5 +1,5 @@
 
-import { ConversationPractice } from '@/components/ConversationPractice';
+import { HeroVoiceInteraction } from '@/components/HeroVoiceInteraction';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { MessageCircle, ArrowLeft } from 'lucide-react';
@@ -37,7 +37,7 @@ const Practice = () => {
 
       {/* Main Content */}
       <main className="py-8">
-        <ConversationPractice />
+        <HeroVoiceInteraction />
       </main>
     </div>
   );

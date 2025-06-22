@@ -74,26 +74,24 @@ export class GeminiService {
     }
   }
 
-  static async startConversation(topic: string): Promise<string> {
-    console.log('Starting conversation with topic:', topic);
+  static async startConversation(prompt: string): Promise<string> {
+    console.log('Starting conversation with prompt:', prompt);
     
     const messages: GeminiMessage[] = [
       {
         role: 'user',
-        parts: [{ 
-          text: `Start a casual conversation about ${topic}. Keep it brief and ask a follow-up question. Respond in 1-2 sentences for speech.`
-        }]
+        parts: [{ text: prompt }]
       }
     ];
 
     try {
       const result = await this.makeRequest(messages);
-      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || 'Hello! Let\'s talk. How are you today?';
+      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || 'Hello! I\'m ready to help you practice. How can I assist you today?';
       console.log('Gemini response:', response);
       return response;
     } catch (error) {
       console.error('Error starting conversation:', error);
-      return 'Hi there! I\'m ready to chat. What would you like to talk about?';
+      return 'Hi there! I\'m ready to help you practice. What would you like to work on?';
     }
   }
 

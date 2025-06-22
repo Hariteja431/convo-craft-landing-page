@@ -3,9 +3,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { HeroVoiceInteraction } from "@/components/HeroVoiceInteraction";
 import { MessageCircle, Users, Play, ArrowRight, CheckCircle, Star } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 const Index = () => {
   const [email, setEmail] = useState("");
@@ -39,12 +39,11 @@ const Index = () => {
               <Button variant="outline" className="border-sage-300 dark:border-sage-600 text-sage-700 dark:text-sage-300 hover:bg-sage-50 dark:hover:bg-sage-800">
                 Sign In
               </Button>
-              <Button 
-                onClick={() => window.location.href = '/practice'}
-                className="bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700 text-white"
-              >
-                Start Practicing
-              </Button>
+              <Link to="/practice">
+                <Button className="bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700 text-white">
+                  Start Practicing
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -53,43 +52,40 @@ const Index = () => {
       {/* Hero Section */}
       <section className="relative overflow-hidden py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="text-center lg:text-left">
-              <Badge className="mb-6 bg-sage-100 dark:bg-sage-800 text-sage-700 dark:text-sage-300 hover:bg-sage-200 dark:hover:bg-sage-700 border-sage-200 dark:border-sage-600">
-                <Star className="w-4 h-4 mr-1" />
-                AI-Powered Language Learning
-              </Badge>
-              <h1 className="text-5xl lg:text-6xl font-bold text-sage-900 dark:text-sage-100 mb-6 leading-tight">
-                Speak Fluently.{" "}
-                <span className="text-sage-700 dark:text-sage-300">
-                  Practice Confidently.
-                </span>
-              </h1>
-              <p className="text-xl text-sage-600 dark:text-sage-400 mb-8 leading-relaxed">
-                Your sophisticated AI conversation partner. Master fluency with elegance, 
-                refine your accent with precision, and build unshakeable confidence in any language.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+          <div className="text-center">
+            <Badge className="mb-6 bg-sage-100 dark:bg-sage-800 text-sage-700 dark:text-sage-300 hover:bg-sage-200 dark:hover:bg-sage-700 border-sage-200 dark:border-sage-600">
+              <Star className="w-4 h-4 mr-1" />
+              AI-Powered Language Learning
+            </Badge>
+            <h1 className="text-5xl lg:text-6xl font-bold text-sage-900 dark:text-sage-100 mb-6 leading-tight">
+              Speak Fluently.{" "}
+              <span className="text-sage-700 dark:text-sage-300">
+                Practice Confidently.
+              </span>
+            </h1>
+            <p className="text-xl text-sage-600 dark:text-sage-400 mb-8 leading-relaxed max-w-3xl mx-auto">
+              Your sophisticated AI conversation partner. Master fluency with elegance, 
+              refine your accent with precision, and build unshakeable confidence in any language.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link to="/practice">
                 <Button 
                   size="lg" 
-                  onClick={() => window.location.href = '/practice'}
                   className="bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700 text-white px-8 py-6 text-lg"
                 >
                   <Play className="w-5 h-5 mr-2" />
                   Begin Your Journey
                 </Button>
+              </Link>
+              <Link to="/practice">
                 <Button 
                   variant="outline" 
                   size="lg"
-                  onClick={() => window.location.href = '/practice'}
                   className="border-2 border-sage-300 dark:border-sage-600 text-sage-700 dark:text-sage-300 hover:bg-sage-50 dark:hover:bg-sage-800 px-8 py-6 text-lg"
                 >
                   Experience Demo
                 </Button>
-              </div>
-            </div>
-            <div className="relative">
-              <HeroVoiceInteraction />
+              </Link>
             </div>
           </div>
         </div>
