@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { MessageCircle, Users, Play, ArrowRight, CheckCircle, Star, MessageSquare, Sparkles, Mic } from "lucide-react";
+import { MessageCircle, Users, Play, ArrowRight, CheckCircle, Star, MessageSquare, Sparkles, Mic, Settings } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -31,9 +31,12 @@ const Index = () => {
               <span className="text-2xl font-bold text-sage-800 dark:text-sage-200">
                 ConvoCraft
               </span>
+              <Badge className="ml-2 bg-sage-100 dark:bg-sage-800 text-sage-700 dark:text-sage-300 border-sage-200 dark:border-sage-600 text-xs px-2 py-1">
+                Beta
+              </Badge>
             </div>
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-sage-700 dark:text-sage-300 hover:text-sage-900 dark:hover:text-sage-100 transition-colors">Features</a>
+              <a href="#advantages" className="text-sage-700 dark:text-sage-300 hover:text-sage-900 dark:hover:text-sage-100 transition-colors">Advantages</a>
               <a href="#how-it-works" className="text-sage-700 dark:text-sage-300 hover:text-sage-900 dark:hover:text-sage-100 transition-colors">How It Works</a>
               <a href="#pricing" className="text-sage-700 dark:text-sage-300 hover:text-sage-900 dark:hover:text-sage-100 transition-colors">Pricing</a>
               <a href="#contact" className="text-sage-700 dark:text-sage-300 hover:text-sage-900 dark:hover:text-sage-100 transition-colors">Contact</a>
@@ -94,7 +97,7 @@ const Index = () => {
       </section>
 
       {/* Who It's For Section */}
-      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-navy-800">
+      <section id="advantages" className="py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-navy-800">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-sage-900 dark:text-sage-100 mb-4">Distinguished Clientele</h2>
@@ -134,7 +137,7 @@ const Index = () => {
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center p-8 bg-white dark:bg-navy-700 rounded-2xl shadow-lg">
               <div className="w-16 h-16 bg-sage-100 dark:bg-sage-800 rounded-full flex items-center justify-center mx-auto mb-6">
-                <MessageSquare className="w-8 h-8 text-sage-600 dark:text-sage-400" />
+                <Settings className="w-8 h-8 text-sage-600 dark:text-sage-400" />
               </div>
               <h3 className="text-2xl font-bold text-sage-900 dark:text-sage-100 mb-4">
                 Choose Your Practice
@@ -197,7 +200,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Pricing Section - Updated with sage theme */}
+      {/* Pricing Section */}
       <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8 bg-sage-50 dark:bg-navy-900">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
@@ -251,6 +254,7 @@ const Index = () => {
                   {[
                     '1 AI voice conversation per day (5 min limit)',
                     'Fluency & pronunciation feedback',
+                    'Voice Quality: Basic robotic voice',
                     'Community support'
                   ].map((feature, idx) => (
                     <li key={idx} className="flex items-center text-sage-600 dark:text-sage-400">
@@ -288,6 +292,7 @@ const Index = () => {
                     'Save & replay past conversations',
                     'Text transcript after each session',
                     'Record own voice for mock replies',
+                    'Voice Quality: Human-like natural voice',
                     'Faster AI response',
                     'Priority email support'
                   ].map((feature, idx) => (
@@ -364,7 +369,7 @@ const Index = () => {
             <div>
               <h4 className="text-white font-semibold mb-4">Excellence</h4>
               <ul className="space-y-2">
-                <li><a href="#" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 transition-colors">Features</a></li>
+                <li><a href="#" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 transition-colors">Advantages</a></li>
                 <li><a href="#" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 transition-colors">Investment</a></li>
                 <li><a href="#" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 transition-colors">API Access</a></li>
                 <li><a href="#" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 transition-colors">Roadmap</a></li>

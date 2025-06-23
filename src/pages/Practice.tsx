@@ -2,6 +2,7 @@
 import { HeroVoiceInteraction } from '@/components/HeroVoiceInteraction';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { MessageCircle, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -20,6 +21,9 @@ const Practice = () => {
                 <span className="text-2xl font-bold text-sage-800 dark:text-sage-200">
                   ConvoCraft
                 </span>
+                <Badge className="ml-2 bg-sage-100 dark:bg-sage-800 text-sage-700 dark:text-sage-300 border-sage-200 dark:border-sage-600 text-xs px-2 py-1">
+                  Beta
+                </Badge>
               </Link>
             </div>
             <div className="flex items-center space-x-4">
