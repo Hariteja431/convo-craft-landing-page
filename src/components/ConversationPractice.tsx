@@ -95,7 +95,7 @@ export const ConversationPractice: React.FC<ConversationPracticeProps> = ({
 
     return () => {
       if (recognitionRef.current) {
-        recognitionRef.current.abort();
+        recognitionRef.current.stop();
       }
       if (synthRef.current) {
         synthRef.current.cancel();
