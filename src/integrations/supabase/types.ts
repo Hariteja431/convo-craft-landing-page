@@ -9,7 +9,156 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      conversations: {
+        Row: {
+          created_at: string
+          id: string
+          scenario_type: string | null
+          status: string | null
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          scenario_type?: string | null
+          status?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          scenario_type?: string | null
+          status?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          audio_url: string | null
+          content: string
+          conversation_id: string
+          created_at: string
+          feedback: Json | null
+          id: string
+          role: string
+        }
+        Insert: {
+          audio_url?: string | null
+          content: string
+          conversation_id: string
+          created_at?: string
+          feedback?: Json | null
+          id?: string
+          role: string
+        }
+        Update: {
+          audio_url?: string | null
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          feedback?: Json | null
+          id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          clerk_user_id: string
+          created_at: string
+          email: string | null
+          first_name: string | null
+          id: string
+          last_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          clerk_user_id: string
+          created_at?: string
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          clerk_user_id?: string
+          created_at?: string
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          created_at: string
+          difficulty_level: string | null
+          id: string
+          practice_goals: string[] | null
+          preferred_language: string | null
+          updated_at: string
+          user_id: string
+          voice_speed: number | null
+        }
+        Insert: {
+          created_at?: string
+          difficulty_level?: string | null
+          id?: string
+          practice_goals?: string[] | null
+          preferred_language?: string | null
+          updated_at?: string
+          user_id: string
+          voice_speed?: number | null
+        }
+        Update: {
+          created_at?: string
+          difficulty_level?: string | null
+          id?: string
+          practice_goals?: string[] | null
+          preferred_language?: string | null
+          updated_at?: string
+          user_id?: string
+          voice_speed?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

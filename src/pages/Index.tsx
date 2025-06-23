@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,6 +7,13 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { MessageCircle, Users, Play, ArrowRight, CheckCircle, Star, MessageSquare, Sparkles, Mic, Settings } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import {
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  SignUpButton,
+  UserButton,
+} from "@clerk/clerk-react";
 
 const Index = () => {
   const [email, setEmail] = useState("");
@@ -15,6 +23,11 @@ const Index = () => {
     e.preventDefault();
     console.log("Email submitted:", email);
     setEmail("");
+  };
+
+  const scrollToAdvantages = (e: React.MouseEvent) => {
+    e.preventDefault();
+    document.getElementById('advantages')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
@@ -35,23 +48,32 @@ const Index = () => {
               </Badge>
             </div>
             <div className="hidden md:flex items-center space-x-8">
-              <a 
-                href="#advantages" 
+              <button 
+                onClick={scrollToAdvantages}
                 className="text-sage-700 dark:text-sage-300 hover:text-sage-900 dark:hover:text-sage-100 transition-colors"
-                onClick={(e) => {
-                  e.preventDefault();
-                  document.getElementById('advantages')?.scrollIntoView({ behavior: 'smooth' });
-                }}
               >
                 Advantages
-              </a>
+              </button>
               <a href="#how-it-works" className="text-sage-700 dark:text-sage-300 hover:text-sage-900 dark:hover:text-sage-100 transition-colors">How It Works</a>
               <a href="#pricing" className="text-sage-700 dark:text-sage-300 hover:text-sage-900 dark:hover:text-sage-100 transition-colors">Pricing</a>
               <a href="#contact" className="text-sage-700 dark:text-sage-300 hover:text-sage-900 dark:hover:text-sage-100 transition-colors">Contact</a>
               <ThemeToggle />
-              <Button variant="outline" className="border-sage-300 dark:border-sage-600 text-sage-700 dark:text-sage-300 hover:bg-sage-50 dark:hover:bg-sage-800">
-                Sign In
-              </Button>
+              <SignedOut>
+                <SignInButton mode="modal">
+                  <Button variant="outline" className="border-sage-300 dark:border-sage-600 text-sage-700 dark:text-sage-300 hover:bg-sage-50 dark:hover:bg-sage-800">
+                    Sign In
+                  </Button>
+                </SignInButton>
+              </SignedOut>
+              <SignedIn>
+                <UserButton 
+                  appearance={{
+                    elements: {
+                      avatarBox: "w-8 h-8"
+                    }
+                  }}
+                />
+              </SignedIn>
               <Link to="/practice">
                 <Button className="bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700 text-white">
                   Start Practicing
