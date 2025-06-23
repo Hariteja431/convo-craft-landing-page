@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -36,7 +35,16 @@ const Index = () => {
               </Badge>
             </div>
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#advantages" className="text-sage-700 dark:text-sage-300 hover:text-sage-900 dark:hover:text-sage-100 transition-colors">Advantages</a>
+              <a 
+                href="#advantages" 
+                className="text-sage-700 dark:text-sage-300 hover:text-sage-900 dark:hover:text-sage-100 transition-colors"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.getElementById('advantages')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                Advantages
+              </a>
               <a href="#how-it-works" className="text-sage-700 dark:text-sage-300 hover:text-sage-900 dark:hover:text-sage-100 transition-colors">How It Works</a>
               <a href="#pricing" className="text-sage-700 dark:text-sage-300 hover:text-sage-900 dark:hover:text-sage-100 transition-colors">Pricing</a>
               <a href="#contact" className="text-sage-700 dark:text-sage-300 hover:text-sage-900 dark:hover:text-sage-100 transition-colors">Contact</a>
@@ -100,8 +108,8 @@ const Index = () => {
       <section id="advantages" className="py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-navy-800">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-sage-900 dark:text-sage-100 mb-4">Distinguished Clientele</h2>
-            <p className="text-xl text-sage-600 dark:text-sage-400">Elevating communication excellence across professions</p>
+            <h2 className="text-4xl font-bold text-sage-900 dark:text-sage-100 mb-4">The ConvoCraft Advantage</h2>
+            <p className="text-xl text-sage-600 dark:text-sage-400">Cultivating excellence in every conversation</p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
