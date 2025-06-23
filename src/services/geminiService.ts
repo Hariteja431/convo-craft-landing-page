@@ -3,9 +3,6 @@
 const GEMINI_API_KEY = 'AIzaSyDCqfTv5cbjOh0LbPsBhji8AQmrlLz4XjE';
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
 
-// Cloud-based API for TTS/STT
-const CLOUD_API_KEY = 'AIzaSyAckaPvwEQZ-CkEAYYNFkTZrioUJjn0B_s';
-
 export interface GeminiMessage {
   role: 'user' | 'model';
   parts: { text: string }[];
@@ -17,6 +14,15 @@ export interface ConversationResponse {
     grammar: string;
     pronunciation: string;
     fluency: string;
+  };
+}
+
+export interface UserContext {
+  conversationHistory: { conversation: any; messages: any[] }[];
+  preferences?: {
+    preferred_language?: string;
+    difficulty_level?: string;
+    practice_goals?: string[];
   };
 }
 
@@ -33,7 +39,7 @@ export class GeminiService {
           temperature: 0.7,
           topK: 30,
           topP: 0.85,
-          maxOutputTokens: 256, // Reduced for shorter responses
+          maxOutputTokens: 256,
         },
       }),
     });
@@ -45,24 +51,35 @@ export class GeminiService {
     return response.json();
   }
 
-  static async getRealtimeResponse(userMessage: string, conversationHistory: GeminiMessage[] = [], customPrompt?: string, selectedLanguage?: string): Promise<string> {
-    console.log('Getting realtime response for:', userMessage);
+  static async getRealtimeResponse(
+    userMessage: string, 
+    conversationHistory: GeminiMessage[] = [], 
+    customPrompt?: string, 
+    selectedLanguage?: string,
+    userContext?: UserContext
+  ): Promise<string> {
+    console.log('Getting tailored realtime response for:', userMessage);
     
     const languageInstruction = selectedLanguage && selectedLanguage !== 'en' 
       ? `CRITICAL: Respond ONLY in ${this.getLanguageName(selectedLanguage)}. Never use English words or phrases.` 
       : '';
     
+    // Build personalized context from user's conversation history
+    const personalizedContext = this.buildPersonalizedContext(userContext);
+    
     const systemPrompt = customPrompt || `You are a friendly, encouraging AI conversation mentor. 
     ${languageInstruction}
+    
+    ${personalizedContext}
     
     RESPONSE STYLE:
     - Keep responses to 1-2 SHORT sentences (15-25 words max)
     - Be warm, supportive, and engaging
     - Sound natural and conversational, not robotic
     - ALWAYS end with a follow-up question or prompt that encourages more speaking
-    - Use varied conversation starters like "What do you think about...", "Have you ever...", "Tell me more about...", "How would you describe..."
+    - Use varied conversation starters based on the user's interests and past conversations
     - Be genuinely curious about their thoughts and experiences
-    - Avoid repetitive phrases`;
+    - Reference their previous topics when appropriate to show continuity`;
     
     const messages: GeminiMessage[] = [
       {
@@ -80,29 +97,38 @@ export class GeminiService {
       const result = await this.makeRequest(messages);
       const response = result.candidates?.[0]?.content?.parts?.[0]?.text || 'That\'s interesting! What made you think of that?';
       
-      console.log('Gemini realtime response:', response);
+      console.log('Gemini tailored response:', response);
       return response;
     } catch (error) {
-      console.error('Error getting realtime response:', error);
+      console.error('Error getting tailored response:', error);
       return 'I hear you! Can you tell me more about that?';
     }
   }
 
-  static async startConversation(prompt: string, selectedLanguage?: string, selectedTopic?: string): Promise<string> {
-    console.log('Starting conversation with prompt:', prompt);
+  static async startConversation(
+    prompt: string, 
+    selectedLanguage?: string, 
+    selectedTopic?: string,
+    userContext?: UserContext
+  ): Promise<string> {
+    console.log('Starting personalized conversation with prompt:', prompt);
     
     const languageName = this.getLanguageName(selectedLanguage || 'en');
     const languageInstruction = selectedLanguage && selectedLanguage !== 'en' 
       ? `CRITICAL: Respond ONLY in ${languageName}. Never use English words or phrases.` 
       : '';
     
+    const personalizedContext = this.buildPersonalizedContext(userContext);
+    
     const contextualPrompt = `${languageInstruction}
     
     You are a warm, friendly AI mentor for ${selectedTopic || 'conversation practice'} in ${languageName}. 
     
+    ${personalizedContext}
+    
     Start with a brief, enthusiastic greeting (1-2 sentences max). Ask an engaging question about ${selectedTopic || 'their goals'} that gets them talking immediately.
     
-    Be conversational, not formal. Sound like a supportive friend, not a teacher.`;
+    Be conversational, not formal. Sound like a supportive friend who remembers past conversations.`;
     
     const messages: GeminiMessage[] = [
       {
@@ -113,35 +139,29 @@ export class GeminiService {
 
     try {
       const result = await this.makeRequest(messages);
-      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || 'Hi there! I\'m excited to practice with you. What would you like to work on today?';
-      console.log('Gemini response:', response);
+      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || 'Welcome back! Ready for another great conversation?';
+      console.log('Gemini personalized response:', response);
       return response;
     } catch (error) {
-      console.error('Error starting conversation:', error);
-      return 'Hello! Ready to have a great conversation? What interests you most today?';
+      console.error('Error starting personalized conversation:', error);
+      return 'Hello! Ready to continue where we left off? What interests you most today?';
     }
   }
 
-  static async continueConversation(userMessage: string, conversationHistory: GeminiMessage[], selectedLanguage?: string, selectedTopic?: string): Promise<ConversationResponse> {
-    const languageName = this.getLanguageName(selectedLanguage || 'en');
-    const languageInstruction = selectedLanguage && selectedLanguage !== 'en' 
-      ? `CRITICAL: Respond ONLY in ${languageName}. Never use English words or phrases.` 
-      : '';
-    
-    const mentorPrompt = `${languageInstruction}
-    
-    You are a supportive conversation mentor for ${selectedTopic?.toLowerCase() || 'conversation practice'} in ${languageName}. 
-    
-    GUIDELINES:
-    - Keep responses SHORT (1-2 sentences, 15-25 words)
-    - Respond naturally to what they said first
-    - ALWAYS end with an engaging follow-up question
-    - Be encouraging and show genuine interest
-    - Use varied question starters: "What's your take on...", "How do you feel about...", "Have you noticed...", "What would you do if..."
-    - Sound like a friendly conversation partner, not a formal teacher
-    - Keep the conversation flowing naturally`;
-    
-    const response = await this.getRealtimeResponse(userMessage, conversationHistory, mentorPrompt, selectedLanguage);
+  static async continueConversation(
+    userMessage: string, 
+    conversationHistory: GeminiMessage[], 
+    selectedLanguage?: string, 
+    selectedTopic?: string,
+    userContext?: UserContext
+  ): Promise<ConversationResponse> {
+    const response = await this.getRealtimeResponse(
+      userMessage, 
+      conversationHistory, 
+      undefined, 
+      selectedLanguage, 
+      userContext
+    );
     
     return {
       response,
@@ -151,6 +171,44 @@ export class GeminiService {
         fluency: 'Natural flow!'
       }
     };
+  }
+
+  private static buildPersonalizedContext(userContext?: UserContext): string {
+    if (!userContext) return '';
+    
+    let context = '';
+    
+    // Add user preferences context
+    if (userContext.preferences) {
+      const { difficulty_level, practice_goals } = userContext.preferences;
+      
+      if (difficulty_level) {
+        context += `The user's skill level is ${difficulty_level}. Adjust your language complexity accordingly. `;
+      }
+      
+      if (practice_goals && practice_goals.length > 0) {
+        context += `Their practice goals include: ${practice_goals.join(', ')}. `;
+      }
+    }
+    
+    // Add conversation history context
+    if (userContext.conversationHistory && userContext.conversationHistory.length > 0) {
+      const recentTopics = userContext.conversationHistory
+        .slice(0, 3)
+        .map(ch => ch.conversation.scenario_type || 'general')
+        .filter((topic, index, arr) => arr.indexOf(topic) === index);
+      
+      if (recentTopics.length > 0) {
+        context += `In recent conversations, they've discussed: ${recentTopics.join(', ')}. You can reference these topics naturally. `;
+      }
+      
+      const totalConversations = userContext.conversationHistory.length;
+      if (totalConversations > 5) {
+        context += `This is an experienced user with ${totalConversations} previous conversations. They appreciate more advanced interactions. `;
+      }
+    }
+    
+    return context ? `PERSONALIZATION CONTEXT: ${context}` : '';
   }
 
   static async getFeedback(userMessage: string): Promise<{ grammar: string; pronunciation: string; fluency: string }> {
