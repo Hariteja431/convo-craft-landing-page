@@ -49,7 +49,7 @@ export class GeminiService {
     console.log('Getting realtime response for:', userMessage);
     
     const languageInstruction = selectedLanguage && selectedLanguage !== 'en' 
-      ? `CRITICAL: Respond ONLY in ${this.getLanguageName(selectedLanguage)}. Never use English words or phrases. Use native script when applicable.` 
+      ? `CRITICAL: Respond ONLY in ${this.getLanguageName(selectedLanguage)}. Never use English words or phrases.` 
       : '';
     
     const systemPrompt = customPrompt || `You are a friendly, encouraging AI conversation mentor. 
@@ -60,7 +60,7 @@ export class GeminiService {
     - Be warm, supportive, and engaging
     - Sound natural and conversational, not robotic
     - ALWAYS end with a follow-up question or prompt that encourages more speaking
-    - Use varied conversation starters appropriate for the language and culture
+    - Use varied conversation starters like "What do you think about...", "Have you ever...", "Tell me more about...", "How would you describe..."
     - Be genuinely curious about their thoughts and experiences
     - Avoid repetitive phrases`;
     
@@ -78,13 +78,13 @@ export class GeminiService {
 
     try {
       const result = await this.makeRequest(messages);
-      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || this.getFallbackResponse(selectedLanguage);
+      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || 'That\'s interesting! What made you think of that?';
       
       console.log('Gemini realtime response:', response);
       return response;
     } catch (error) {
       console.error('Error getting realtime response:', error);
-      return this.getFallbackResponse(selectedLanguage);
+      return 'I hear you! Can you tell me more about that?';
     }
   }
 
@@ -93,7 +93,7 @@ export class GeminiService {
     
     const languageName = this.getLanguageName(selectedLanguage || 'en');
     const languageInstruction = selectedLanguage && selectedLanguage !== 'en' 
-      ? `CRITICAL: Respond ONLY in ${languageName}. Never use English words or phrases. Use native script when applicable.` 
+      ? `CRITICAL: Respond ONLY in ${languageName}. Never use English words or phrases.` 
       : '';
     
     const contextualPrompt = `${languageInstruction}
@@ -113,19 +113,19 @@ export class GeminiService {
 
     try {
       const result = await this.makeRequest(messages);
-      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || this.getFallbackGreeting(selectedLanguage);
+      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || 'Hi there! I\'m excited to practice with you. What would you like to work on today?';
       console.log('Gemini response:', response);
       return response;
     } catch (error) {
       console.error('Error starting conversation:', error);
-      return this.getFallbackGreeting(selectedLanguage);
+      return 'Hello! Ready to have a great conversation? What interests you most today?';
     }
   }
 
   static async continueConversation(userMessage: string, conversationHistory: GeminiMessage[], selectedLanguage?: string, selectedTopic?: string): Promise<ConversationResponse> {
     const languageName = this.getLanguageName(selectedLanguage || 'en');
     const languageInstruction = selectedLanguage && selectedLanguage !== 'en' 
-      ? `CRITICAL: Respond ONLY in ${languageName}. Never use English words or phrases. Use native script when applicable.` 
+      ? `CRITICAL: Respond ONLY in ${languageName}. Never use English words or phrases.` 
       : '';
     
     const mentorPrompt = `${languageInstruction}
@@ -137,7 +137,7 @@ export class GeminiService {
     - Respond naturally to what they said first
     - ALWAYS end with an engaging follow-up question
     - Be encouraging and show genuine interest
-    - Use varied question starters appropriate for the language and culture
+    - Use varied question starters: "What's your take on...", "How do you feel about...", "Have you noticed...", "What would you do if..."
     - Sound like a friendly conversation partner, not a formal teacher
     - Keep the conversation flowing naturally`;
     
@@ -164,20 +164,6 @@ export class GeminiService {
   private static getLanguageName(languageCode: string): string {
     const languageMap: { [key: string]: string } = {
       'en': 'English',
-      'hi': 'Hindi (हिंदी)',
-      'bn': 'Bengali (বাংলা)',
-      'te': 'Telugu (తెలుగు)',
-      'mr': 'Marathi (मराठी)',
-      'ta': 'Tamil (தமிழ்)',
-      'gu': 'Gujarati (ગુજરાતી)',
-      'kn': 'Kannada (ಕನ್ನಡ)',
-      'ml': 'Malayalam (മലയാളം)',
-      'pa': 'Punjabi (ਪੰਜਾਬੀ)',
-      'or': 'Odia (ଓଡ଼ିଆ)',
-      'as': 'Assamese (অসমীয়া)',
-      'ur': 'Urdu (اردو)',
-      'sa': 'Sanskrit (संस्कृत)',
-      'ne': 'Nepali (नेपाली)',
       'es': 'Spanish (Español)',
       'fr': 'French (Français)',
       'de': 'German (Deutsch)',
@@ -189,37 +175,5 @@ export class GeminiService {
       'ar': 'Arabic (العربية)'
     };
     return languageMap[languageCode] || 'English';
-  }
-
-  private static getFallbackResponse(languageCode?: string): string {
-    const fallbacks: { [key: string]: string } = {
-      'hi': 'यह दिलचस्प है! इस बारे में और बताइए?',
-      'bn': 'এটি আকর্ষণীয়! এ সম্পর্কে আরও বলুন?',
-      'te': 'ఇది ఆసక్తికరంగా ఉంది! దీని గురించి మరింత చెప్పండి?',
-      'mr': 'हे मनोरंजक आहे! याबद्दल अधिक सांगा?',
-      'ta': 'இது சுவாரஸ்யமாக உள்ளது! இதைப் பற்றி மேலும் சொல்லுங்கள்?',
-      'gu': 'આ રસપ્રદ છે! આ વિશે વધુ કહો?',
-      'kn': 'ಇದು ಆಸಕ್ತಿದಾಯಕವಾಗಿದೆ! ಈ ಬಗ್ಗೆ ಹೆಚ್ಚು ಹೇಳಿ?',
-      'ml': 'ഇത് രസകരമാണ്! ഇതിനെക്കുറിച്ച് കൂടുതൽ പറയൂ?',
-      'pa': 'ਇਹ ਦਿਲਚਸਪ ਹੈ! ਇਸ ਬਾਰੇ ਹੋਰ ਦੱਸੋ?',
-      'ur': 'یہ دلچسپ ہے! اس کے بارے میں مزید بتائیں؟'
-    };
-    return fallbacks[languageCode || 'en'] || 'That\'s interesting! What made you think of that?';
-  }
-
-  private static getFallbackGreeting(languageCode?: string): string {
-    const greetings: { [key: string]: string } = {
-      'hi': 'नमस्ते! आज आप किस बारे में बात करना चाहते हैं?',
-      'bn': 'নমস্কার! আজ আপনি কী নিয়ে কথা বলতে চান?',
-      'te': 'నమస్కారం! ఈరోజు మీరు దేని గురించి మాట్లాడాలని అనుకుంటున్নారు?',
-      'mr': 'नमस्कार! आज तुम्ही कशाबद्दल बोलू इच्छिता?',
-      'ta': 'வணக்கம்! இன்று நீங்கள் எதைப் பற்றி பேச விரும்புகிறீர்கள்?',
-      'gu': 'નમસ્તે! આજે તમે શું વિશે વાત કરવા માંગો છો?',
-      'kn': 'ನಮಸ್ಕಾರ! ಇಂದು ನೀವು ಯಾವುದರ ಬಗ್ಗೆ ಮಾತನಾಡಲು ಬಯಸುತ್ತೀರಿ?',
-      'ml': 'നമസ്കാരം! ഇന്ന് നിങ്ങൾ എന്തിനെക്കുറിച്ചാണ് സംസാരിക്കാൻ ആഗ്രഹിക്കുന്നത്?',
-      'pa': 'ਸਤ ਸ੍ਰੀ ਅਕਾਲ! ਅੱਜ ਤੁਸੀਂ ਕਿਸ ਬਾਰੇ ਗੱਲ ਕਰਨਾ ਚਾਹੁੰਦੇ ਹੋ?',
-      'ur': 'السلام علیکم! آج آپ کس بارے میں بات کرنا چاہتے ہیں؟'
-    };
-    return greetings[languageCode || 'en'] || 'Hi there! I\'m excited to practice with you. What would you like to work on today?';
   }
 }
