@@ -5,8 +5,33 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MessageCircle, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
 
 const Practice = () => {
+  // Cleanup microphone access when component unmounts
+  useEffect(() => {
+    return () => {
+      // Stop any active media streams when leaving the practice page
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+          stream.getTracks().forEach(track => track.stop());
+        })
+        .catch(() => {
+          // Ignore errors if no stream is active
+        });
+      
+      // Stop any active speech recognition
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        // This will be handled by the ConversationPractice component cleanup
+      }
+      
+      // Stop any active speech synthesis
+      if ('speechSynthesis' in window) {
+        speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-cream-50 dark:bg-navy-900 transition-colors duration-300">
       {/* Navigation */}

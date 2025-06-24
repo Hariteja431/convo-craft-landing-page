@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -27,7 +26,7 @@ const Index = () => {
 
   const scrollToAdvantages = (e: React.MouseEvent) => {
     e.preventDefault();
-    document.getElementById('advantages')?.scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('benefits')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
@@ -126,12 +125,12 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Who It's For Section */}
-      <section id="advantages" className="py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-navy-800">
+      {/* Distinguished Clientele Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-navy-800">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-sage-900 dark:text-sage-100 mb-4">The ConvoCraft Advantage</h2>
-            <p className="text-xl text-sage-600 dark:text-sage-400">Cultivating excellence in every conversation</p>
+            <h2 className="text-4xl font-bold text-sage-900 dark:text-sage-100 mb-4">Distinguished Clientele</h2>
+            <p className="text-xl text-sage-600 dark:text-sage-400">Elevating communication excellence across professions</p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
@@ -204,8 +203,8 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Benefits Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-navy-800">
+      {/* Benefits Section - The ConvoCraft Advantage */}
+      <section id="benefits" className="py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-navy-800">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-sage-900 dark:text-sage-100 mb-4">The ConvoCraft Advantage</h2>
@@ -399,19 +398,19 @@ const Index = () => {
             <div>
               <h4 className="text-white font-semibold mb-4">Excellence</h4>
               <ul className="space-y-2">
-                <li><a href="#" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 transition-colors">Advantages</a></li>
-                <li><a href="#" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 transition-colors">Investment</a></li>
-                <li><a href="#" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 transition-colors">API Access</a></li>
-                <li><a href="#" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 transition-colors">Roadmap</a></li>
+                <li><span className="text-sage-400 dark:text-sage-500 cursor-default">Advantages</span></li>
+                <li><span className="text-sage-400 dark:text-sage-500 cursor-default">Investment</span></li>
+                <li><span className="text-sage-400 dark:text-sage-500 cursor-default">API Access</span></li>
+                <li><span className="text-sage-400 dark:text-sage-500 cursor-default">Roadmap</span></li>
               </ul>
             </div>
             <div>
               <h4 className="text-white font-semibold mb-4">Heritage</h4>
               <ul className="space-y-2">
-                <li><a href="#" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 transition-colors">About</a></li>
-                <li><a href="#" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 transition-colors">Contact</a></li>
-                <li><a href="#" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 transition-colors">Privacy Charter</a></li>
-                <li><a href="#" className="text-sage-400 dark:text-sage-500 hover:text-white dark:hover:text-sage-300 transition-colors">Terms of Service</a></li>
+                <li><span className="text-sage-400 dark:text-sage-500 cursor-default">About</span></li>
+                <li><span className="text-sage-400 dark:text-sage-500 cursor-default">Contact</span></li>
+                <li><span className="text-sage-400 dark:text-sage-500 cursor-default">Privacy Charter</span></li>
+                <li><span className="text-sage-400 dark:text-sage-500 cursor-default">Terms of Service</span></li>
               </ul>
             </div>
           </div>

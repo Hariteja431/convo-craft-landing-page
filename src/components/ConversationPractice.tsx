@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +20,7 @@ export const ConversationPractice = () => {
   const recognition = useRef<SpeechRecognition | null>(null);
   const conversationRef = useRef<HTMLDivElement>(null);
   const currentUtterance = useRef<SpeechSynthesisUtterance | null>(null);
+  const mediaStream = useRef<MediaStream | null>(null);
 
   const topics = [
     'Daily routine', 'Hobbies', 'Travel', 'Food', 'Work', 'Movies', 'Sports', 'Technology'
@@ -54,6 +54,24 @@ export const ConversationPractice = () => {
         setIsListening(false);
       };
     }
+
+    // Cleanup function
+    return () => {
+      // Stop speech recognition
+      if (recognition.current) {
+        recognition.current.stop();
+      }
+      
+      // Stop media stream
+      if (mediaStream.current) {
+        mediaStream.current.getTracks().forEach(track => track.stop());
+      }
+      
+      // Stop speech synthesis
+      if ('speechSynthesis' in window) {
+        speechSynthesis.cancel();
+      }
+    };
   }, [isSpeechMode]);
 
   // Auto-scroll to bottom of conversation
@@ -112,7 +130,7 @@ export const ConversationPractice = () => {
     setIsLoading(false);
   };
 
-  const toggleListening = () => {
+  const toggleListening = async () => {
     if (!recognition.current) {
       alert('Speech recognition is not supported in your browser');
       return;
@@ -121,11 +139,25 @@ export const ConversationPractice = () => {
     if (isListening) {
       recognition.current.stop();
       setIsListening(false);
+      // Stop media stream if active
+      if (mediaStream.current) {
+        mediaStream.current.getTracks().forEach(track => track.stop());
+        mediaStream.current = null;
+      }
     } else {
-      // Stop any current speech before listening
-      stopSpeaking();
-      recognition.current.start();
-      setIsListening(true);
+      try {
+        // Request microphone access
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaStream.current = stream;
+        
+        // Stop any current speech before listening
+        stopSpeaking();
+        recognition.current.start();
+        setIsListening(true);
+      } catch (error) {
+        console.error('Error accessing microphone:', error);
+        alert('Unable to access microphone. Please check permissions.');
+      }
     }
   };
 
@@ -166,6 +198,23 @@ export const ConversationPractice = () => {
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  const handleTopicChange = () => {
+    // Clean up when changing topics
+    if (recognition.current) {
+      recognition.current.stop();
+    }
+    if (mediaStream.current) {
+      mediaStream.current.getTracks().forEach(track => track.stop());
+      mediaStream.current = null;
+    }
+    stopSpeaking();
+    setIsListening(false);
+    setSelectedTopic('');
+    setConversation([]);
+    setConversationHistory([]);
+    setFeedback(null);
   };
 
   return (
@@ -228,13 +277,7 @@ export const ConversationPractice = () => {
                   Topic: {selectedTopic}
                 </Badge>
                 <Button
-                  onClick={() => {
-                    setSelectedTopic('');
-                    setConversation([]);
-                    setConversationHistory([]);
-                    setFeedback(null);
-                    stopSpeaking();
-                  }}
+                  onClick={handleTopicChange}
                   variant="outline"
                   size="sm"
                   className="border-sage-300 dark:border-sage-600 text-sage-700 dark:text-sage-300"
