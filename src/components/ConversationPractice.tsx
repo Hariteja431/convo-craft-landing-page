@@ -1,10 +1,13 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Mic, MicOff, Send, MessageCircle, Volume2, VolumeX } from 'lucide-react';
+import { Mic, MicOff, Send, MessageCircle, Volume2, VolumeX, User, Bot } from 'lucide-react';
 import { GeminiService, GeminiMessage } from '@/services/geminiService';
+import { SpeechService } from '@/services/speechService';
+import { LanguageSelector } from '@/components/LanguageSelector';
 
 export const ConversationPractice = () => {
   const [isListening, setIsListening] = useState(false);
@@ -13,13 +16,14 @@ export const ConversationPractice = () => {
   const [conversationHistory, setConversationHistory] = useState<GeminiMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedTopic, setSelectedTopic] = useState('');
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [preferMaleVoice, setPreferMaleVoice] = useState(false);
   const [feedback, setFeedback] = useState<{ grammar: string; pronunciation: string; fluency: string } | null>(null);
   const [isSpeechMode, setIsSpeechMode] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
   
   const recognition = useRef<SpeechRecognition | null>(null);
   const conversationRef = useRef<HTMLDivElement>(null);
-  const currentUtterance = useRef<SpeechSynthesisUtterance | null>(null);
   const mediaStream = useRef<MediaStream | null>(null);
 
   const topics = [
@@ -28,31 +32,37 @@ export const ConversationPractice = () => {
 
   // Initialize speech recognition
   useEffect(() => {
+    const initializeSpeechRecognition = async () => {
+      try {
+        const speechRecognition = await SpeechService.startRecognition({ language: selectedLanguage });
+        recognition.current = speechRecognition;
+
+        recognition.current.onresult = (event) => {
+          const transcript = event.results[0][0].transcript;
+          setCurrentMessage(transcript);
+          setIsListening(false);
+          
+          // Auto-send message if in speech mode
+          if (isSpeechMode) {
+            handleSendMessage(transcript);
+          }
+        };
+
+        recognition.current.onerror = (event) => {
+          console.error('Speech recognition error:', event.error);
+          setIsListening(false);
+        };
+
+        recognition.current.onend = () => {
+          setIsListening(false);
+        };
+      } catch (error) {
+        console.error('Failed to initialize speech recognition:', error);
+      }
+    };
+
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognition.current = new SpeechRecognition();
-      recognition.current.continuous = false;
-      recognition.current.interimResults = false;
-      recognition.current.lang = 'en-US';
-
-      recognition.current.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        setCurrentMessage(transcript);
-        setIsListening(false);
-        
-        // Auto-send message if in speech mode
-        if (isSpeechMode) {
-          handleSendMessage(transcript);
-        }
-      };
-
-      recognition.current.onerror = () => {
-        setIsListening(false);
-      };
-
-      recognition.current.onend = () => {
-        setIsListening(false);
-      };
+      initializeSpeechRecognition();
     }
 
     // Cleanup function
@@ -68,11 +78,9 @@ export const ConversationPractice = () => {
       }
       
       // Stop speech synthesis
-      if ('speechSynthesis' in window) {
-        speechSynthesis.cancel();
-      }
+      SpeechService.stopSpeech();
     };
-  }, [isSpeechMode]);
+  }, [selectedLanguage, isSpeechMode]);
 
   // Auto-scroll to bottom of conversation
   useEffect(() => {
@@ -81,30 +89,23 @@ export const ConversationPractice = () => {
     }
   }, [conversation]);
 
-  const speakText = (text: string) => {
-    if ('speechSynthesis' in window) {
-      // Stop any current speech
-      speechSynthesis.cancel();
-      
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.9;
-      utterance.pitch = 1;
-      utterance.volume = 0.8;
-      
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
-      
-      currentUtterance.current = utterance;
-      speechSynthesis.speak(utterance);
+  const speakText = async (text: string) => {
+    try {
+      setIsSpeaking(true);
+      await SpeechService.speakText(text, { 
+        language: selectedLanguage, 
+        preferMaleVoice: preferMaleVoice 
+      });
+      setIsSpeaking(false);
+    } catch (error) {
+      console.error('Error speaking text:', error);
+      setIsSpeaking(false);
     }
   };
 
   const stopSpeaking = () => {
-    if ('speechSynthesis' in window) {
-      speechSynthesis.cancel();
-      setIsSpeaking(false);
-    }
+    SpeechService.stopSpeech();
+    setIsSpeaking(false);
   };
 
   const startConversation = async (topic: string) => {
@@ -114,7 +115,7 @@ export const ConversationPractice = () => {
     setIsLoading(true);
 
     try {
-      const aiResponse = await GeminiService.startConversation(topic);
+      const aiResponse = await GeminiService.startConversation(topic, selectedLanguage, topic);
       const aiMessage = { role: 'ai' as const, message: aiResponse, timestamp: new Date() };
       setConversation([aiMessage]);
       setConversationHistory([{ role: 'model', parts: [{ text: aiResponse }] }]);
@@ -174,7 +175,7 @@ export const ConversationPractice = () => {
     setIsLoading(true);
     
     try {
-      const result = await GeminiService.continueConversation(messageToSend, conversationHistory);
+      const result = await GeminiService.continueConversation(messageToSend, conversationHistory, selectedLanguage, selectedTopic);
       const aiMessage = { role: 'ai' as const, message: result.response, timestamp: new Date() };
       
       setConversation(prev => [...prev, aiMessage]);
@@ -226,27 +227,44 @@ export const ConversationPractice = () => {
               <MessageCircle className="w-6 h-6" />
               Conversation Practice
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={() => setIsSpeechMode(!isSpeechMode)}
-                variant="outline"
-                size="sm"
-                className={`border-sage-300 dark:border-sage-600 ${
-                  isSpeechMode ? 'bg-sage-100 dark:bg-sage-800' : ''
-                }`}
-              >
-                {isSpeechMode ? 'Speech Mode' : 'Text Mode'}
-              </Button>
-              {isSpeaking && (
+            <div className="flex items-center gap-4">
+              <LanguageSelector
+                selectedLanguage={selectedLanguage}
+                onLanguageChange={setSelectedLanguage}
+              />
+              <div className="flex items-center gap-2">
                 <Button
-                  onClick={stopSpeaking}
+                  onClick={() => setPreferMaleVoice(!preferMaleVoice)}
                   variant="outline"
                   size="sm"
-                  className="border-red-300 text-red-600 hover:bg-red-50"
+                  className={`border-sage-300 dark:border-sage-600 ${
+                    preferMaleVoice ? 'bg-blue-100 dark:bg-blue-800' : ''
+                  }`}
                 >
-                  <VolumeX className="w-4 h-4" />
+                  <User className="w-4 h-4 mr-1" />
+                  {preferMaleVoice ? 'Male Voice' : 'Female Voice'}
                 </Button>
-              )}
+                <Button
+                  onClick={() => setIsSpeechMode(!isSpeechMode)}
+                  variant="outline"
+                  size="sm"
+                  className={`border-sage-300 dark:border-sage-600 ${
+                    isSpeechMode ? 'bg-sage-100 dark:bg-sage-800' : ''
+                  }`}
+                >
+                  {isSpeechMode ? 'Speech Mode' : 'Text Mode'}
+                </Button>
+                {isSpeaking && (
+                  <Button
+                    onClick={stopSpeaking}
+                    variant="outline"
+                    size="sm"
+                    className="border-red-300 text-red-600 hover:bg-red-50"
+                  >
+                    <VolumeX className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
             </div>
           </CardTitle>
         </CardHeader>
@@ -274,7 +292,7 @@ export const ConversationPractice = () => {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <Badge className="bg-sage-100 dark:bg-sage-800 text-sage-700 dark:text-sage-300">
-                  Topic: {selectedTopic}
+                  Topic: {selectedTopic} | Language: {selectedLanguage.toUpperCase()}
                 </Badge>
                 <Button
                   onClick={handleTopicChange}
@@ -302,6 +320,16 @@ export const ConversationPractice = () => {
                           : 'bg-white dark:bg-navy-800 text-sage-900 dark:text-sage-100 border border-sage-200 dark:border-navy-600'
                       }`}
                     >
+                      <div className="flex items-center gap-2 mb-1">
+                        {msg.role === 'user' ? (
+                          <User className="w-3 h-3" />
+                        ) : (
+                          <Bot className="w-3 h-3" />
+                        )}
+                        <span className="text-xs font-medium">
+                          {msg.role === 'user' ? 'You' : 'AI Assistant'}
+                        </span>
+                      </div>
                       <p className="text-sm">{msg.message}</p>
                       <span className="text-xs opacity-70">
                         {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -313,9 +341,12 @@ export const ConversationPractice = () => {
                   <div className="flex justify-start">
                     <div className="bg-white dark:bg-navy-800 border border-sage-200 dark:border-navy-600 rounded-lg px-4 py-2 max-w-xs">
                       <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                        <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                        <Bot className="w-3 h-3" />
+                        <div className="flex items-center gap-1">
+                          <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce"></div>
+                          <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                          <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                        </div>
                       </div>
                     </div>
                   </div>
