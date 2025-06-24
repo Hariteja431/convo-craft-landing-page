@@ -1,10 +1,9 @@
+// Using the updated API key and switching to gemini-1.5-flash for better reliability
+const GEMINI_API_KEY = 'AIzaSyDfrXbhhPP2xC9zM7-caHtiTq2YWk81gbk';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
-// Using the new Gemini 2.5 Flash API for faster responses
-const GEMINI_API_KEY = 'AIzaSyDCqfTv5cbjOh0LbPsBhji8AQmrlLz4XjE';
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
-
-// Cloud-based API for TTS/STT
-const CLOUD_API_KEY = 'AIzaSyAckaPvwEQZ-CkEAYYNFkTZrioUJjn0B_s';
+// TTS/STT API key
+const CLOUD_API_KEY = 'AIzaSyBhmF6KnRc-ItjJw5vTYf76AUqddCT_m0g';
 
 export interface GeminiMessage {
   role: 'user' | 'model';
@@ -22,6 +21,8 @@ export interface ConversationResponse {
 
 export class GeminiService {
   private static async makeRequest(messages: GeminiMessage[]): Promise<any> {
+    console.log('Making request to Gemini API with messages:', messages);
+    
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
@@ -30,23 +31,25 @@ export class GeminiService {
       body: JSON.stringify({
         contents: messages,
         generationConfig: {
-          temperature: 0.8,
+          temperature: 0.9,
           topK: 40,
           topP: 0.95,
-          maxOutputTokens: 512, // Increased for better responses
+          maxOutputTokens: 1024,
         },
       }),
     });
 
     if (!response.ok) {
-      throw new Error(`Gemini API error: ${response.statusText}`);
+      const errorData = await response.text();
+      console.error('Gemini API error response:', errorData);
+      throw new Error(`Gemini API error: ${response.status} - ${errorData}`);
     }
 
     return response.json();
   }
 
   static async getRealtimeResponse(userMessage: string, conversationHistory: GeminiMessage[] = [], customPrompt?: string, selectedLanguage?: string, selectedTopic?: string): Promise<string> {
-    console.log('Getting realtime response for:', userMessage);
+    console.log('Getting realtime response for:', userMessage, 'Language:', selectedLanguage, 'Topic:', selectedTopic);
     
     const languageName = this.getLanguageName(selectedLanguage || 'en');
     const languageInstruction = selectedLanguage && selectedLanguage !== 'en' 
@@ -54,30 +57,34 @@ export class GeminiService {
       : '';
     
     const topicContext = selectedTopic ? `about ${selectedTopic.toLowerCase()}` : '';
+    const topicGreeting = this.getTopicGreeting(selectedTopic, languageName);
     
-    const systemPrompt = customPrompt || `You are an enthusiastic, supportive conversation mentor specializing in ${selectedTopic || 'conversation practice'} ${topicContext}. 
+    const systemPrompt = customPrompt || `You are ${topicGreeting} - an incredibly enthusiastic, warm, and supportive conversation mentor specializing in ${selectedTopic || 'conversation practice'} ${topicContext}! 
     ${languageInstruction}
     
     PERSONALITY & TONE:
-    - Be genuinely excited and encouraging like a friendly coach
-    - Use topic-specific language and enthusiasm (e.g., "Hey there, ${selectedTopic} superstar!" for relevant topics)
-    - Show authentic interest in their thoughts and experiences
-    - Be warm, energetic, and motivating
-    - Sound like a passionate mentor, not a robotic assistant
+    - Be SUPER energetic and encouraging like an amazing coach who genuinely cares
+    - Use topic-specific enthusiasm (like "Hey there, ${selectedTopic} superstar!" or "Awesome ${selectedTopic} skills!")
+    - Show authentic excitement about their progress and thoughts
+    - Be warm, motivating, and incredibly supportive
+    - Sound like their best friend who's also an expert mentor, not a robotic assistant
     
     RESPONSE STYLE:
-    - Keep responses conversational and natural (2-4 sentences, 25-50 words)
-    - Always include topic-relevant encouragement and energy
+    - Keep responses conversational and natural (2-4 sentences, 30-60 words)
+    - ALWAYS include topic-specific encouragement and excitement
     - Ask engaging follow-up questions that dive deeper into ${selectedTopic || 'their interests'}
-    - Use varied, enthusiastic conversation starters
-    - Match their energy and build excitement about the topic
-    - Be specific to ${selectedTopic || 'the conversation topic'} when possible
+    - Use varied, enthusiastic conversation starters and responses
+    - Match their energy and build genuine excitement about the topic
+    - Be VERY specific to ${selectedTopic || 'the conversation topic'} when possible
+    - Use phrases like: "That's amazing progress in ${selectedTopic}!", "I love your perspective on this!", "You're really getting the hang of ${selectedTopic}!"
     
     CONVERSATION FLOW:
-    - Respond directly to what they said first
-    - Then ask an engaging question that keeps the conversation flowing
+    - Respond directly to what they said with enthusiasm first
+    - Then ask an engaging question that keeps the conversation flowing naturally
     - Show genuine curiosity about their perspective on ${selectedTopic || 'the topic'}
-    - Use questions like: "That's fascinating! What's your experience with...", "I love that perspective! Have you found that...", "That's such an interesting point about ${selectedTopic}! How do you usually..."`;
+    - Use questions like: "That's fascinating! What's your experience with...", "I love that approach! Have you found that...", "That's such a brilliant insight about ${selectedTopic}! How do you usually handle..."
+    
+    Remember: You're not just answering questions - you're their enthusiastic ${selectedTopic || 'conversation'} coach who's genuinely excited to help them succeed!`;
     
     const messages: GeminiMessage[] = [
       {
@@ -93,14 +100,14 @@ export class GeminiService {
 
     try {
       const result = await this.makeRequest(messages);
-      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || `That's fascinating! Tell me more about your thoughts on ${selectedTopic || 'this topic'}!`;
+      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || `Hey there, ${selectedTopic} champion! That's such an interesting point! Tell me more about your thoughts on ${selectedTopic || 'this topic'} - I'm genuinely excited to hear your perspective!`;
       
       console.log('Gemini realtime response:', response);
       return response;
     } catch (error) {
       console.error('Error getting realtime response:', error);
-      const fallbackTopic = selectedTopic || 'this';
-      return `I'm really excited to hear your thoughts on ${fallbackTopic}! What's your take on it?`;
+      const fallbackTopic = selectedTopic || 'this amazing topic';
+      return `Hey there, ${fallbackTopic} superstar! I'm so excited to explore this with you! What's your take on ${fallbackTopic}? I'd love to hear your thoughts and help you dive deeper!`;
     }
   }
 
@@ -116,12 +123,14 @@ export class GeminiService {
     
     const contextualPrompt = `${languageInstruction}
     
-    You are an enthusiastic conversation mentor for ${selectedTopic || 'conversation practice'} in ${languageName}. 
+    You are ${topicGreeting} - an incredibly enthusiastic and energetic conversation mentor for ${selectedTopic || 'conversation practice'} in ${languageName}! 
     
-    Start with ${topicGreeting} and immediately dive into an engaging question about ${selectedTopic || 'their goals'} that gets them excited to share their thoughts.
+    Start with a warm, exciting greeting like "${topicGreeting}" and immediately dive into an engaging, specific question about ${selectedTopic || 'their goals'} that gets them genuinely excited to share their thoughts and experiences.
     
-    Be energetic, encouraging, and show genuine interest in helping them improve their ${selectedTopic || 'conversation'} skills.
-    Keep it warm and conversational - like meeting an exciting new conversation partner!`;
+    Be super energetic, encouraging, and show authentic interest in helping them improve their ${selectedTopic || 'conversation'} skills.
+    Keep it warm and conversational - like meeting the most amazing conversation partner who's also an expert in ${selectedTopic || 'this field'}!
+    
+    Make them feel like they're talking to their best friend who happens to be a ${selectedTopic || 'conversation'} expert!`;
     
     const messages: GeminiMessage[] = [
       {
@@ -132,12 +141,12 @@ export class GeminiService {
 
     try {
       const result = await this.makeRequest(messages);
-      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || `Hey there! I'm so excited to practice ${selectedTopic || 'conversation'} with you today! What aspect interests you most?`;
+      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || `${topicGreeting} I'm absolutely thrilled to practice ${selectedTopic || 'conversation'} with you today! What aspect of ${selectedTopic || 'this topic'} excites you most? I can't wait to dive in together!`;
       console.log('Gemini start conversation response:', response);
       return response;
     } catch (error) {
       console.error('Error starting conversation:', error);
-      return `Hello ${selectedTopic} enthusiast! I'm thrilled to help you practice today. What would you love to explore about ${selectedTopic || 'this topic'}?`;
+      return `${this.getTopicGreeting(selectedTopic, languageName)} I'm so excited to help you practice ${selectedTopic || 'conversation'} today! What would you love to explore about ${selectedTopic || 'this amazing topic'}? Let's make this super engaging!`;
     }
   }
 
@@ -208,7 +217,7 @@ export class GeminiService {
       'Sports': 'Hey sports superstar!',
       'Technology': 'Hello tech wizard!',
       'Public Speaking': 'Hey public speaking champion!',
-      'Business': 'Hello business leader!',
+      'Business': 'Hey business leader!',
       'Education': 'Hey learning enthusiast!'
     };
     
