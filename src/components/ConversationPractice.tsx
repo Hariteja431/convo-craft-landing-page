@@ -48,7 +48,7 @@ export const ConversationPractice = () => {
           }
         };
 
-        recognition.current.onerror = (event) => {
+        recognition.current.onerror = (event: SpeechRecognitionErrorEvent) => {
           console.error('Speech recognition error:', event.error);
           setIsListening(false);
         };
