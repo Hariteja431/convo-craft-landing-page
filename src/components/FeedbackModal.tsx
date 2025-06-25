@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Volume2, VolumeX, CheckCircle, AlertCircle, Lightbulb, Target, Heart } from 'lucide-react';
-import { DetailedFeedback } from '@/services/geminiService';
+import { DetailedFeedback, GrammaticalMistake } from '@/services/geminiService';
 
 interface FeedbackModalProps {
   isOpen: boolean;
@@ -35,7 +35,9 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
       
       Your Strengths: ${feedback.strengths.join('. ')}
       
-      ${feedback.grammaticalMistakes.length > 0 ? `Areas to improve: ${feedback.grammaticalMistakes.join('. ')}` : ''}
+      ${feedback.grammaticalMistakes.length > 0 ? `Areas to improve: ${feedback.grammaticalMistakes.map(mistake => 
+        typeof mistake === 'string' ? mistake : `${mistake.error} (Suggestion: ${mistake.correction})`
+      ).join('. ')}` : ''}
       
       Vocabulary suggestions: ${feedback.vocabularySuggestions.join('. ')}
       
@@ -73,6 +75,27 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
       setIsSpeaking(false);
       setCurrentUtterance(null);
     }
+  };
+
+  const renderGrammaticalMistake = (mistake: string | GrammaticalMistake, index: number) => {
+    let displayText: string;
+    
+    if (typeof mistake === 'string') {
+      displayText = mistake;
+    } else if (mistake && typeof mistake === 'object' && 'error' in mistake && 'correction' in mistake) {
+      displayText = `${mistake.error} (Suggestion: ${mistake.correction})`;
+    } else {
+      displayText = String(mistake);
+    }
+
+    return (
+      <li key={index} className="flex items-start gap-2 text-orange-700 dark:text-orange-300">
+        <Badge className="bg-orange-100 dark:bg-orange-800 text-orange-700 dark:text-orange-300 text-xs px-2 py-1 mt-0.5">
+          !
+        </Badge>
+        {displayText}
+      </li>
+    );
   };
 
   return (
@@ -164,14 +187,9 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
-                    {feedback.grammaticalMistakes.map((mistake, index) => (
-                      <li key={index} className="flex items-start gap-2 text-orange-700 dark:text-orange-300">
-                        <Badge className="bg-orange-100 dark:bg-orange-800 text-orange-700 dark:text-orange-300 text-xs px-2 py-1 mt-0.5">
-                          !
-                        </Badge>
-                        {mistake}
-                      </li>
-                    ))}
+                    {feedback.grammaticalMistakes.map((mistake, index) => 
+                      renderGrammaticalMistake(mistake, index)
+                    )}
                   </ul>
                 </CardContent>
               </Card>

@@ -16,10 +16,15 @@ export interface ConversationResponse {
   };
 }
 
+export interface GrammaticalMistake {
+  error: string;
+  correction: string;
+}
+
 export interface DetailedFeedback {
   overallPerformance: string;
   strengths: string[];
-  grammaticalMistakes: string[];
+  grammaticalMistakes: (string | GrammaticalMistake)[];
   vocabularySuggestions: string[];
   improvementTips: string[];
   encouragement: string;
@@ -252,11 +257,13 @@ export class GeminiService {
     {
       "overallPerformance": "Brief encouraging assessment (1-2 sentences)",
       "strengths": ["List 2-3 specific things they did well"],
-      "grammaticalMistakes": ["Only major/recurring errors with corrections - max 3"],
+      "grammaticalMistakes": ["Only major/recurring errors with corrections - max 3, as simple strings"],
       "vocabularySuggestions": ["2-3 alternative words/phrases they could use"],
       "improvementTips": ["2-3 actionable suggestions for better communication"],
       "encouragement": "Motivating closing message (1-2 sentences)"
     }
+
+    IMPORTANT: For grammaticalMistakes, provide simple string descriptions like "Consider using 'I have been' instead of 'I am being' for present perfect tense" rather than complex objects.
 
     Keep the tone supportive and constructive. Focus on growth and progress. Be specific but encouraging.`;
 
@@ -276,6 +283,17 @@ export class GeminiService {
         const jsonMatch = feedbackText.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const feedback = JSON.parse(jsonMatch[0]);
+          
+          // Ensure grammaticalMistakes are strings
+          if (feedback.grammaticalMistakes) {
+            feedback.grammaticalMistakes = feedback.grammaticalMistakes.map((mistake: any) => {
+              if (typeof mistake === 'object' && mistake.error && mistake.correction) {
+                return `${mistake.error} (Suggestion: ${mistake.correction})`;
+              }
+              return typeof mistake === 'string' ? mistake : String(mistake);
+            });
+          }
+          
           return feedback;
         }
       } catch (parseError) {
