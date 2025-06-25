@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Volume2, VolumeX, CheckCircle, AlertCircle, Lightbulb, Target, Heart } from 'lucide-react';
-import { DetailedFeedback, GrammaticalMistake } from '@/services/geminiService';
+import { DetailedFeedback, GrammaticalMistake } from '@/services/openAIService';
 
 interface FeedbackModalProps {
   isOpen: boolean;

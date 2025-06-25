@@ -6,8 +6,7 @@ import { Mic, MicOff, Volume2, VolumeX, User, Users, MessageCircle, MessageSquar
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { GeminiService, GeminiMessage, DetailedFeedback } from '@/services/geminiService';
-import { ElevenLabsService } from '@/services/elevenLabsService';
+import { OpenAIService, OpenAIMessage, DetailedFeedback } from '@/services/openAIService';
 import { FeedbackModal } from '@/components/FeedbackModal';
 import { useUser } from '@clerk/clerk-react';
 import { SignInButton } from '@clerk/clerk-react';
@@ -54,7 +53,7 @@ export const HeroVoiceInteraction = () => {
   const [selectedTopic, setSelectedTopic] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [conversation, setConversation] = useState<ConversationTurn[]>([]);
-  const [conversationHistory, setConversationHistory] = useState<GeminiMessage[]>([]);
+  const [conversationHistory, setConversationHistory] = useState<OpenAIMessage[]>([]);
   const [hasStarted, setHasStarted] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
@@ -63,22 +62,27 @@ export const HeroVoiceInteraction = () => {
   const [quotaExceeded, setQuotaExceeded] = useState(false);
   const [showQuotaWarning, setShowQuotaWarning] = useState(false);
   
-  const recognition = useRef<SpeechRecognition | null>(null);
+  const mediaRecorder = useRef<MediaRecorder | null>(null);
+  const audioChunks = useRef<Blob[]>([]);
   const audioContext = useRef<AudioContext | null>(null);
   const analyser = useRef<AnalyserNode | null>(null);
   const microphone = useRef<MediaStreamAudioSourceNode | null>(null);
   const animationFrame = useRef<number | null>(null);
   const currentAudioSource = useRef<AudioBufferSourceNode | null>(null);
+  const mediaStream = useRef<MediaStream | null>(null);
 
   // Cleanup function to stop all audio activities
   const cleanupAudio = () => {
-    if (recognition.current) {
-      recognition.current.stop();
-      recognition.current = null;
+    if (mediaRecorder.current && mediaRecorder.current.state !== 'inactive') {
+      mediaRecorder.current.stop();
     }
     if (currentAudioSource.current) {
       currentAudioSource.current.stop();
       currentAudioSource.current = null;
+    }
+    if (mediaStream.current) {
+      mediaStream.current.getTracks().forEach(track => track.stop());
+      mediaStream.current = null;
     }
     setIsSpeaking(false);
     setIsListening(false);
@@ -105,102 +109,10 @@ export const HeroVoiceInteraction = () => {
     };
   }, []);
 
-  // Initialize speech recognition and audio analysis
-  useEffect(() => {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognition.current = new SpeechRecognition();
-      recognition.current.continuous = true;
-      recognition.current.interimResults = true;
-      
-      // Set language based on selection
-      const selectedLang = LANGUAGES.find(lang => lang.code === selectedLanguage);
-      recognition.current.lang = selectedLang?.speechCode || 'en-US';
-
-      recognition.current.onresult = async (event) => {
-        const transcript = event.results[event.results.length - 1][0].transcript.trim();
-        
-        if (event.results[event.results.length - 1].isFinal && transcript.length > 0) {
-          console.log('Final transcript:', transcript);
-          
-          const userTurn: ConversationTurn = {
-            speaker: 'user',
-            message: transcript,
-            timestamp: new Date()
-          };
-          setConversation(prev => [...prev, userTurn]);
-          
-          setIsListening(false);
-          setIsProcessing(true);
-          stopAudioAnalysis();
-          recognition.current?.stop();
-          
-          try {
-            const newUserMessage: GeminiMessage = {
-              role: 'user',
-              parts: [{ text: transcript }]
-            };
-            
-            const result = await GeminiService.continueConversation(
-              transcript, 
-              conversationHistory, 
-              selectedLanguage, 
-              selectedTopic
-            );
-            
-            // Check if the response indicates quota exceeded
-            if (result.response.includes('daily conversation limit') || result.response.includes('daily limit')) {
-              setQuotaExceeded(true);
-              setShowQuotaWarning(true);
-            }
-            
-            const aiTurn: ConversationTurn = {
-              speaker: 'ai',
-              message: result.response,
-              timestamp: new Date()
-            };
-            setConversation(prev => [...prev, aiTurn]);
-            
-            const aiMessage: GeminiMessage = {
-              role: 'model',
-              parts: [{ text: result.response }]
-            };
-            setConversationHistory(prev => [...prev, newUserMessage, aiMessage]);
-            
-            await speakTextWithElevenLabs(result.response);
-          } catch (error) {
-            console.error('Error getting AI response:', error);
-            const errorMessage = 'That\'s interesting! Tell me more about that.';
-            const aiTurn: ConversationTurn = {
-              speaker: 'ai',
-              message: errorMessage,
-              timestamp: new Date()
-            };
-            setConversation(prev => [...prev, aiTurn]);
-            await speakTextWithElevenLabs(errorMessage);
-          }
-          
-          setIsProcessing(false);
-        }
-      };
-
-      recognition.current.onerror = (event) => {
-        console.error('Speech recognition error:', event);
-        setIsListening(false);
-        setIsProcessing(false);
-        stopAudioAnalysis();
-      };
-
-      recognition.current.onend = () => {
-        setIsListening(false);
-        stopAudioAnalysis();
-      };
-    }
-  }, [conversationHistory, selectedLanguage, selectedTopic]);
-
   const setupAudioAnalysis = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStream.current = stream;
       audioContext.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       analyser.current = audioContext.current.createAnalyser();
       microphone.current = audioContext.current.createMediaStreamSource(stream);
@@ -236,7 +148,7 @@ export const HeroVoiceInteraction = () => {
     setAudioLevel(0);
   };
 
-  const speakTextWithElevenLabs = async (text: string) => {
+  const speakTextWithOpenAI = async (text: string) => {
     try {
       setIsSpeaking(true);
       
@@ -245,8 +157,8 @@ export const HeroVoiceInteraction = () => {
         currentAudioSource.current.stop();
       }
       
-      const voiceId = ElevenLabsService.getVoiceId(selectedVoice);
-      const audioBuffer = await ElevenLabsService.textToSpeech(text, voiceId);
+      const voice = OpenAIService.getVoice(selectedVoice);
+      const audioBuffer = await OpenAIService.textToSpeech(text, voice);
       
       // Create audio context if not exists
       if (!audioContext.current) {
@@ -272,7 +184,7 @@ export const HeroVoiceInteraction = () => {
       
       source.start();
     } catch (error) {
-      console.error('Error with ElevenLabs TTS:', error);
+      console.error('Error with OpenAI TTS:', error);
       setIsSpeaking(false);
       // Fallback to browser speech synthesis
       fallbackToSpeechSynthesis(text);
@@ -363,28 +275,107 @@ export const HeroVoiceInteraction = () => {
   };
 
   const startListening = async () => {
-    if (!recognition.current) {
-      alert('Speech recognition is not supported in your browser');
-      return;
-    }
-
     if (quotaExceeded) {
       setShowQuotaWarning(true);
       return;
     }
 
-    stopSpeaking();
-    await setupAudioAnalysis();
-    recognition.current.start();
-    setIsListening(true);
+    try {
+      stopSpeaking();
+      await setupAudioAnalysis();
+      
+      // Setup MediaRecorder for OpenAI Whisper
+      if (mediaStream.current) {
+        audioChunks.current = [];
+        mediaRecorder.current = new MediaRecorder(mediaStream.current);
+        
+        mediaRecorder.current.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            audioChunks.current.push(event.data);
+          }
+        };
+        
+        mediaRecorder.current.onstop = async () => {
+          const audioBlob = new Blob(audioChunks.current, { type: 'audio/wav' });
+          
+          try {
+            setIsProcessing(true);
+            const transcript = await OpenAIService.speechToText(audioBlob);
+            
+            if (transcript.trim()) {
+              console.log('Transcribed text:', transcript);
+              
+              const userTurn: ConversationTurn = {
+                speaker: 'user',
+                message: transcript,
+                timestamp: new Date()
+              };
+              setConversation(prev => [...prev, userTurn]);
+              
+              // Get AI response
+              const newUserMessage: OpenAIMessage = {
+                role: 'user',
+                content: transcript
+              };
+              
+              const result = await OpenAIService.continueConversation(
+                transcript, 
+                conversationHistory, 
+                selectedLanguage, 
+                selectedTopic
+              );
+              
+              // Check if the response indicates quota exceeded
+              if (result.response.includes('daily conversation limit') || result.response.includes('daily limit')) {
+                setQuotaExceeded(true);
+                setShowQuotaWarning(true);
+              }
+              
+              const aiTurn: ConversationTurn = {
+                speaker: 'ai',
+                message: result.response,
+                timestamp: new Date()
+              };
+              setConversation(prev => [...prev, aiTurn]);
+              
+              const aiMessage: OpenAIMessage = {
+                role: 'assistant',
+                content: result.response
+              };
+              setConversationHistory(prev => [...prev, newUserMessage, aiMessage]);
+              
+              await speakTextWithOpenAI(result.response);
+            }
+          } catch (error) {
+            console.error('Error processing speech:', error);
+            const errorMessage = 'That\'s interesting! Tell me more about that.';
+            const aiTurn: ConversationTurn = {
+              speaker: 'ai',
+              message: errorMessage,
+              timestamp: new Date()
+            };
+            setConversation(prev => [...prev, aiTurn]);
+            await speakTextWithOpenAI(errorMessage);
+          }
+          
+          setIsProcessing(false);
+        };
+        
+        mediaRecorder.current.start();
+        setIsListening(true);
+      }
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      alert('Unable to access microphone. Please check permissions.');
+    }
   };
 
   const stopListening = () => {
-    if (recognition.current) {
-      recognition.current.stop();
-      setIsListening(false);
-      stopAudioAnalysis();
+    if (mediaRecorder.current && mediaRecorder.current.state !== 'inactive') {
+      mediaRecorder.current.stop();
     }
+    setIsListening(false);
+    stopAudioAnalysis();
   };
 
   const toggleListening = () => {
@@ -412,7 +403,7 @@ export const HeroVoiceInteraction = () => {
       setQuotaExceeded(false);
       setShowQuotaWarning(false);
       
-      const aiResponse = await GeminiService.startConversation('', selectedLanguage, selectedTopic);
+      const aiResponse = await OpenAIService.startConversation('', selectedLanguage, selectedTopic);
       
       // Check if the response indicates quota exceeded
       if (aiResponse.includes('daily conversation limit') || aiResponse.includes('daily limit')) {
@@ -427,13 +418,13 @@ export const HeroVoiceInteraction = () => {
       };
       setConversation([aiTurn]);
       
-      const aiMessage: GeminiMessage = {
-        role: 'model',
-        parts: [{ text: aiResponse }]
+      const aiMessage: OpenAIMessage = {
+        role: 'assistant',
+        content: aiResponse
       };
       setConversationHistory([aiMessage]);
       
-      await speakTextWithElevenLabs(aiResponse);
+      await speakTextWithOpenAI(aiResponse);
       setIsProcessing(false);
     } catch (error) {
       console.error('Error starting conversation:', error);
@@ -462,7 +453,7 @@ export const HeroVoiceInteraction = () => {
     setShowFeedbackModal(true);
 
     try {
-      const feedback = await GeminiService.generateDetailedFeedback(
+      const feedback = await OpenAIService.generateDetailedFeedback(
         conversation,
         selectedLanguage,
         selectedTopic

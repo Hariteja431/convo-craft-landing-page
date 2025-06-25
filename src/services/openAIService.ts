@@ -1,10 +1,10 @@
-// Using the new Gemini API key
-const GEMINI_API_KEY = 'AIzaSyAm0mYkyp2FOhwFJoQ_9pwOMSSTKtZRbww';
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+// OpenAI API service for STT, TTS, and LLM
+const OPENAI_API_KEY = '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';
+const OPENAI_BASE_URL = 'https://api.openai.com/v1';
 
-export interface GeminiMessage {
-  role: 'user' | 'model';
-  parts: { text: string }[];
+export interface OpenAIMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
 }
 
 export interface ConversationResponse {
@@ -30,7 +30,7 @@ export interface DetailedFeedback {
   encouragement: string;
 }
 
-export class GeminiAPIError extends Error {
+export class OpenAIAPIError extends Error {
   constructor(
     message: string,
     public status: number,
@@ -38,34 +38,103 @@ export class GeminiAPIError extends Error {
     public isRateLimited: boolean = false
   ) {
     super(message);
-    this.name = 'GeminiAPIError';
+    this.name = 'OpenAIAPIError';
   }
 }
 
-export class GeminiService {
-  private static async makeRequest(messages: GeminiMessage[]): Promise<any> {
-    console.log('Making request to Gemini API with messages:', messages);
-    
+export class OpenAIService {
+  // Text-to-Speech using OpenAI
+  static async textToSpeech(text: string, voice: 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer' = 'alloy'): Promise<ArrayBuffer> {
     try {
-      const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+      const response = await fetch(`${OPENAI_BASE_URL}/audio/speech`, {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          contents: messages,
-          generationConfig: {
-            temperature: 0.9,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 1024,
-          },
+          model: 'tts-1',
+          input: text,
+          voice: voice,
+          response_format: 'mp3',
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.text();
-        console.error('Gemini API error response:', errorData);
+        console.error('OpenAI TTS error response:', errorData);
+        throw new OpenAIAPIError(
+          `OpenAI TTS API error: ${response.status}`,
+          response.status,
+          response.status === 429,
+          response.status === 429
+        );
+      }
+
+      return await response.arrayBuffer();
+    } catch (error) {
+      console.error('Error with OpenAI TTS:', error);
+      throw error;
+    }
+  }
+
+  // Speech-to-Text using OpenAI Whisper
+  static async speechToText(audioBlob: Blob): Promise<string> {
+    try {
+      const formData = new FormData();
+      formData.append('file', audioBlob, 'audio.wav');
+      formData.append('model', 'whisper-1');
+      formData.append('language', 'en');
+
+      const response = await fetch(`${OPENAI_BASE_URL}/audio/transcriptions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('OpenAI STT error response:', errorData);
+        throw new OpenAIAPIError(
+          `OpenAI STT API error: ${response.status}`,
+          response.status,
+          response.status === 429,
+          response.status === 429
+        );
+      }
+
+      const result = await response.json();
+      return result.text || '';
+    } catch (error) {
+      console.error('Error with OpenAI STT:', error);
+      throw error;
+    }
+  }
+
+  // Chat completion using OpenAI GPT
+  private static async makeRequest(messages: OpenAIMessage[]): Promise<any> {
+    console.log('Making request to OpenAI API with messages:', messages);
+    
+    try {
+      const response = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: messages,
+          max_tokens: 1024,
+          temperature: 0.9,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('OpenAI API error response:', errorData);
         
         let parsedError;
         try {
@@ -80,7 +149,7 @@ export class GeminiService {
         
         const isRateLimited = response.status === 429;
         
-        throw new GeminiAPIError(
+        throw new OpenAIAPIError(
           parsedError.error?.message || `API request failed with status ${response.status}`,
           response.status,
           isQuotaExceeded,
@@ -90,13 +159,12 @@ export class GeminiService {
 
       return response.json();
     } catch (error) {
-      if (error instanceof GeminiAPIError) {
+      if (error instanceof OpenAIAPIError) {
         throw error;
       }
       
-      // Handle network errors or other issues
       console.error('Network or other error:', error);
-      throw new GeminiAPIError(
+      throw new OpenAIAPIError(
         'Unable to connect to AI service. Please check your internet connection.',
         0,
         false,
@@ -105,15 +173,13 @@ export class GeminiService {
     }
   }
 
-  static async getRealtimeResponse(userMessage: string, conversationHistory: GeminiMessage[] = [], customPrompt?: string, selectedLanguage?: string, selectedTopic?: string): Promise<string> {
+  static async getRealtimeResponse(userMessage: string, conversationHistory: OpenAIMessage[] = [], customPrompt?: string, selectedLanguage?: string, selectedTopic?: string): Promise<string> {
     console.log('Getting realtime response for:', userMessage, 'Language:', selectedLanguage, 'Topic:', selectedTopic);
     
     const languageName = this.getLanguageName(selectedLanguage || 'en');
     const languageInstruction = selectedLanguage && selectedLanguage !== 'en' 
       ? `CRITICAL: Respond ONLY in ${languageName}. Never use English words or phrases unless absolutely necessary for technical terms.` 
       : '';
-    
-    const topicContext = selectedTopic ? `about ${selectedTopic.toLowerCase()}` : '';
     
     const systemPrompt = customPrompt || `You are a friendly, energetic English tutor helping users improve their communication skills! You speak like a real-life human tutor — casual, supportive, and slightly playful when needed.
     ${languageInstruction}
@@ -141,28 +207,28 @@ export class GeminiService {
     
     Remember: Your main goal is to make them feel comfortable and want to keep talking! Short, sweet, and engaging responses work best.`;
     
-    const messages: GeminiMessage[] = [
+    const messages: OpenAIMessage[] = [
       {
-        role: 'user',
-        parts: [{ text: systemPrompt }]
+        role: 'system',
+        content: systemPrompt
       },
       ...conversationHistory,
       {
         role: 'user',
-        parts: [{ text: userMessage }]
+        content: userMessage
       }
     ];
 
     try {
       const result = await this.makeRequest(messages);
-      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || `That's interesting! Tell me more about that. What do you think?`;
+      const response = result.choices?.[0]?.message?.content || `That's interesting! Tell me more about that. What do you think?`;
       
-      console.log('Gemini realtime response:', response);
+      console.log('OpenAI realtime response:', response);
       return response;
     } catch (error) {
       console.error('Error getting realtime response:', error);
       
-      if (error instanceof GeminiAPIError) {
+      if (error instanceof OpenAIAPIError) {
         if (error.isQuotaExceeded) {
           return `I'm sorry, but we've reached our daily conversation limit. The service will be available again tomorrow. Thank you for practicing with us today!`;
         } else if (error.isRateLimited) {
@@ -197,22 +263,22 @@ export class GeminiService {
     
     Keep it short, natural, and engaging!`;
     
-    const messages: GeminiMessage[] = [
+    const messages: OpenAIMessage[] = [
       {
-        role: 'user',
-        parts: [{ text: contextualPrompt }]
+        role: 'system',
+        content: contextualPrompt
       }
     ];
 
     try {
       const result = await this.makeRequest(messages);
-      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || `Hey there! I'm excited to chat with you today. What's something you're passionate about?`;
-      console.log('Gemini start conversation response:', response);
+      const response = result.choices?.[0]?.message?.content || `Hey there! I'm excited to chat with you today. What's something you're passionate about?`;
+      console.log('OpenAI start conversation response:', response);
       return response;
     } catch (error) {
       console.error('Error starting conversation:', error);
       
-      if (error instanceof GeminiAPIError) {
+      if (error instanceof OpenAIAPIError) {
         if (error.isQuotaExceeded) {
           return `Welcome! I'd love to chat, but we've reached our daily conversation limit. Please try again tomorrow!`;
         } else if (error.isRateLimited) {
@@ -224,7 +290,7 @@ export class GeminiService {
     }
   }
 
-  static async continueConversation(userMessage: string, conversationHistory: GeminiMessage[], selectedLanguage?: string, selectedTopic?: string): Promise<ConversationResponse> {
+  static async continueConversation(userMessage: string, conversationHistory: OpenAIMessage[], selectedLanguage?: string, selectedTopic?: string): Promise<ConversationResponse> {
     const response = await this.getRealtimeResponse(userMessage, conversationHistory, undefined, selectedLanguage, selectedTopic);
     
     return {
@@ -267,16 +333,16 @@ export class GeminiService {
 
     Keep the tone supportive and constructive. Focus on growth and progress. Be specific but encouraging.`;
 
-    const messages: GeminiMessage[] = [
+    const messages: OpenAIMessage[] = [
       {
-        role: 'user',
-        parts: [{ text: feedbackPrompt }]
+        role: 'system',
+        content: feedbackPrompt
       }
     ];
 
     try {
       const result = await this.makeRequest(messages);
-      const feedbackText = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const feedbackText = result.choices?.[0]?.message?.content || '';
       
       // Try to parse JSON response
       try {
@@ -305,7 +371,7 @@ export class GeminiService {
     } catch (error) {
       console.error('Error generating detailed feedback:', error);
       
-      if (error instanceof GeminiAPIError) {
+      if (error instanceof OpenAIAPIError) {
         if (error.isQuotaExceeded) {
           throw new Error('QUOTA_EXCEEDED');
         } else if (error.isRateLimited) {
@@ -341,70 +407,13 @@ export class GeminiService {
     };
   }
 
-  static async generateFeedback(conversationMessages: any[], selectedLanguage?: string, selectedTopic?: string): Promise<string> {
-    const languageName = this.getLanguageName(selectedLanguage || 'en');
-    const languageInstruction = selectedLanguage && selectedLanguage !== 'en' 
-      ? `Provide feedback in ${languageName}.` 
-      : '';
-    
-    const conversationText = conversationMessages
-      .filter(msg => msg.role === 'user')
-      .map(msg => msg.message)
-      .join('\n');
-
-    const feedbackPrompt = `As a friendly language master and conversation coach, analyze this ${selectedTopic || 'conversation'} practice session and provide encouraging, specific feedback. ${languageInstruction}
-
-    Conversation topic: ${selectedTopic || 'General conversation'}
-    User's messages: ${conversationText}
-
-    Provide feedback in this format:
-    • Overall Performance: [encouraging assessment]
-    • Strengths: [specific positive points]
-    • Areas for Growth: [gentle suggestions]
-    • ${selectedTopic} Skills: [topic-specific feedback if relevant]
-    • Next Steps: [motivating suggestions for improvement]
-
-    Keep the tone supportive, encouraging, and constructive. Focus on progress and growth mindset.`;
-
-    const messages: GeminiMessage[] = [
-      {
-        role: 'user',
-        parts: [{ text: feedbackPrompt }]
-      }
-    ];
-
-    try {
-      const result = await this.makeRequest(messages);
-      return result.candidates?.[0]?.content?.parts?.[0]?.text || 'Great job on your conversation practice! Keep up the excellent work!';
-    } catch (error) {
-      console.error('Error generating feedback:', error);
-      
-      if (error instanceof GeminiAPIError && error.isQuotaExceeded) {
-        return 'We\'ve reached our daily feedback limit, but your conversation practice was excellent! Please try again tomorrow for detailed feedback.';
-      }
-      
-      return 'Wonderful conversation practice! You showed great engagement and communication skills. Keep practicing!';
-    }
-  }
-
-  private static getTopicGreeting(topic?: string, language?: string): string {
-    if (!topic) return 'a warm, enthusiastic greeting';
-    
-    const greetings = {
-      'Daily routine': 'Hey there, daily routine rockstar!',
-      'Hobbies': 'Hello hobby enthusiast!',
-      'Travel': 'Hey travel adventurer!',
-      'Food': 'Hello foodie friend!',
-      'Work': 'Hey career champion!',
-      'Movies': 'Hello movie buff!',
-      'Sports': 'Hey sports superstar!',
-      'Technology': 'Hello tech wizard!',
-      'Public Speaking': 'Hey public speaking champion!',
-      'Business': 'Hey business leader!',
-      'Education': 'Hey learning enthusiast!'
+  // Get voice based on gender preference for OpenAI TTS
+  static getVoice(gender: 'male' | 'female'): 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer' {
+    const voices = {
+      female: 'nova', // Female voice
+      male: 'onyx',   // Male voice
     };
-    
-    return greetings[topic as keyof typeof greetings] || `Hey ${topic} enthusiast!`;
+    return voices[gender];
   }
 
   private static getLanguageName(languageCode: string): string {
