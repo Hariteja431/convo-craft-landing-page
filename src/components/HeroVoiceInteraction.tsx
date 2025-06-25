@@ -7,6 +7,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { GeminiService, GeminiMessage, DetailedFeedback } from '@/services/geminiService';
+import { ElevenLabsService } from '@/services/elevenLabsService';
 import { FeedbackModal } from '@/components/FeedbackModal';
 import { useUser } from '@clerk/clerk-react';
 import { SignInButton } from '@clerk/clerk-react';
@@ -63,11 +64,11 @@ export const HeroVoiceInteraction = () => {
   const [showQuotaWarning, setShowQuotaWarning] = useState(false);
   
   const recognition = useRef<SpeechRecognition | null>(null);
-  const currentUtterance = useRef<SpeechSynthesisUtterance | null>(null);
   const audioContext = useRef<AudioContext | null>(null);
   const analyser = useRef<AnalyserNode | null>(null);
   const microphone = useRef<MediaStreamAudioSourceNode | null>(null);
   const animationFrame = useRef<number | null>(null);
+  const currentAudioSource = useRef<AudioBufferSourceNode | null>(null);
 
   // Cleanup function to stop all audio activities
   const cleanupAudio = () => {
@@ -75,8 +76,9 @@ export const HeroVoiceInteraction = () => {
       recognition.current.stop();
       recognition.current = null;
     }
-    if ('speechSynthesis' in window) {
-      speechSynthesis.cancel();
+    if (currentAudioSource.current) {
+      currentAudioSource.current.stop();
+      currentAudioSource.current = null;
     }
     setIsSpeaking(false);
     setIsListening(false);
@@ -165,7 +167,7 @@ export const HeroVoiceInteraction = () => {
             };
             setConversationHistory(prev => [...prev, newUserMessage, aiMessage]);
             
-            speakText(result.response);
+            await speakTextWithElevenLabs(result.response);
           } catch (error) {
             console.error('Error getting AI response:', error);
             const errorMessage = 'That\'s interesting! Tell me more about that.';
@@ -175,7 +177,7 @@ export const HeroVoiceInteraction = () => {
               timestamp: new Date()
             };
             setConversation(prev => [...prev, aiTurn]);
-            speakText(errorMessage);
+            await speakTextWithElevenLabs(errorMessage);
           }
           
           setIsProcessing(false);
@@ -234,7 +236,50 @@ export const HeroVoiceInteraction = () => {
     setAudioLevel(0);
   };
 
-  const speakText = (text: string) => {
+  const speakTextWithElevenLabs = async (text: string) => {
+    try {
+      setIsSpeaking(true);
+      
+      // Stop any current audio
+      if (currentAudioSource.current) {
+        currentAudioSource.current.stop();
+      }
+      
+      const voiceId = ElevenLabsService.getVoiceId(selectedVoice);
+      const audioBuffer = await ElevenLabsService.textToSpeech(text, voiceId);
+      
+      // Create audio context if not exists
+      if (!audioContext.current) {
+        audioContext.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+      
+      const audioBufferDecoded = await audioContext.current.decodeAudioData(audioBuffer);
+      const source = audioContext.current.createBufferSource();
+      source.buffer = audioBufferDecoded;
+      source.connect(audioContext.current.destination);
+      
+      currentAudioSource.current = source;
+      
+      source.onended = () => {
+        setIsSpeaking(false);
+        currentAudioSource.current = null;
+        setTimeout(() => {
+          if (!isListening && !isProcessing && hasStarted && !quotaExceeded) {
+            startListening();
+          }
+        }, 800);
+      };
+      
+      source.start();
+    } catch (error) {
+      console.error('Error with ElevenLabs TTS:', error);
+      setIsSpeaking(false);
+      // Fallback to browser speech synthesis
+      fallbackToSpeechSynthesis(text);
+    }
+  };
+
+  const fallbackToSpeechSynthesis = (text: string) => {
     if ('speechSynthesis' in window) {
       speechSynthesis.cancel();
       
@@ -247,14 +292,11 @@ export const HeroVoiceInteraction = () => {
         
         let selectedVoiceObj;
         
-        // Enhanced voice selection with better quality voices
         if (selectedVoice === 'female') {
           const femalePatterns = [
             'zira', 'susan', 'catherine', 'samantha', 'karen', 'victoria', 'anna', 'emma', 
             'serena', 'aria', 'allison', 'ava', 'kate', 'helena', 'monica', 'paloma', 
-            'paulina', 'female', 'woman', 'amélie', 'claire', 'marie', 'céline', 'petra',
-            'marlene', 'helena', 'alice', 'luciana', 'federica', 'silvia', 'joana', 
-            'catarina', 'mei-jia', 'sin-ji', 'yuki', 'kyoko', 'misaki', 'nayeon'
+            'paulina', 'female', 'woman'
           ];
           
           selectedVoiceObj = voices.find(voice => 
@@ -265,9 +307,7 @@ export const HeroVoiceInteraction = () => {
         } else {
           const malePatterns = [
             'david', 'mark', 'james', 'ryan', 'aaron', 'nathan', 'fred', 'jorge', 
-            'diego', 'carlos', 'male', 'man', 'thomas', 'alex', 'daniel', 'tom',
-            'bruno', 'henri', 'paul', 'antoine', 'stefan', 'ralf', 'giorgio', 
-            'luca', 'felipe', 'rafael', 'huang', 'xiaofeng', 'takeshi', 'kenji'
+            'diego', 'carlos', 'male', 'man', 'thomas', 'alex', 'daniel', 'tom'
           ];
           
           selectedVoiceObj = voices.find(voice => 
@@ -276,20 +316,17 @@ export const HeroVoiceInteraction = () => {
           );
         }
         
-        // Fallback to any voice in the selected language
         if (!selectedVoiceObj) {
           selectedVoiceObj = voices.find(voice => voice.lang.startsWith(selectedLanguage));
         }
         
         if (selectedVoiceObj) {
           utterance.voice = selectedVoiceObj;
-          console.log('Selected voice:', selectedVoiceObj.name);
         }
         
-        // Enhanced voice settings for more natural speech
-        utterance.rate = 0.85; // Slightly slower for more natural pace
-        utterance.pitch = selectedVoice === 'female' ? 1.1 : 0.9; // More subtle pitch differences
-        utterance.volume = 0.9; // Slightly higher volume for clarity
+        utterance.rate = 0.85;
+        utterance.pitch = selectedVoice === 'female' ? 1.1 : 0.9;
+        utterance.volume = 0.9;
         utterance.lang = langCode;
         
         utterance.onstart = () => setIsSpeaking(true);
@@ -299,11 +336,10 @@ export const HeroVoiceInteraction = () => {
             if (!isListening && !isProcessing && hasStarted && !quotaExceeded) {
               startListening();
             }
-          }, 800); // Slightly longer pause for more natural conversation flow
+          }, 800);
         };
         utterance.onerror = () => setIsSpeaking(false);
         
-        currentUtterance.current = utterance;
         speechSynthesis.speak(utterance);
       };
 
@@ -316,10 +352,14 @@ export const HeroVoiceInteraction = () => {
   };
 
   const stopSpeaking = () => {
+    if (currentAudioSource.current) {
+      currentAudioSource.current.stop();
+      currentAudioSource.current = null;
+    }
     if ('speechSynthesis' in window) {
       speechSynthesis.cancel();
-      setIsSpeaking(false);
     }
+    setIsSpeaking(false);
   };
 
   const startListening = async () => {
@@ -393,7 +433,7 @@ export const HeroVoiceInteraction = () => {
       };
       setConversationHistory([aiMessage]);
       
-      speakText(aiResponse);
+      await speakTextWithElevenLabs(aiResponse);
       setIsProcessing(false);
     } catch (error) {
       console.error('Error starting conversation:', error);

@@ -1,9 +1,6 @@
-// Using the updated API key and switching to gemini-1.5-flash for better reliability
-const GEMINI_API_KEY = 'AIzaSyDfrXbhhPP2xC9zM7-caHtiTq2YWk81gbk';
+// Using the new Gemini API key
+const GEMINI_API_KEY = 'AIzaSyAm0mYkyp2FOhwFJoQ_9pwOMSSTKtZRbww';
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
-
-// TTS/STT API key
-const CLOUD_API_KEY = 'AIzaSyBhmF6KnRc-ItjJw5vTYf76AUqddCT_m0g';
 
 export interface GeminiMessage {
   role: 'user' | 'model';
