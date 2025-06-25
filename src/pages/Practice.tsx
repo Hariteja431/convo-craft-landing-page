@@ -1,4 +1,3 @@
-
 import { HeroVoiceInteraction } from '@/components/HeroVoiceInteraction';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
@@ -6,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { MessageCircle, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useEffect } from 'react';
+import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
 
 const Practice = () => {
   // Cleanup microphone access when component unmounts
@@ -59,6 +59,22 @@ const Practice = () => {
                 </Button>
               </Link>
               <ThemeToggle />
+              <SignedOut>
+                <SignInButton mode="modal">
+                  <Button variant="outline" className="border-sage-300 dark:border-sage-600 text-sage-700 dark:text-sage-300 hover:bg-sage-50 dark:hover:bg-sage-800">
+                    Sign In
+                  </Button>
+                </SignInButton>
+              </SignedOut>
+              <SignedIn>
+                <UserButton 
+                  appearance={{
+                    elements: {
+                      avatarBox: "w-8 h-8"
+                    }
+                  }}
+                />
+              </SignedIn>
             </div>
           </div>
         </div>

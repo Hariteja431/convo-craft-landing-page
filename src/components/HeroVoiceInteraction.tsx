@@ -1,13 +1,15 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Mic, MicOff, Volume2, VolumeX, User, Users, MessageCircle } from 'lucide-react';
+import { Mic, MicOff, Volume2, VolumeX, User, Users, MessageCircle, MessageSquare } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { GeminiService, GeminiMessage } from '@/services/geminiService';
+import { GeminiService, GeminiMessage, DetailedFeedback } from '@/services/geminiService';
+import { FeedbackModal } from '@/components/FeedbackModal';
+import { useUser } from '@clerk/clerk-react';
+import { SignInButton } from '@clerk/clerk-react';
 
 interface ConversationTurn {
   speaker: 'user' | 'ai';
@@ -43,6 +45,7 @@ const LANGUAGES = [
 ];
 
 export const HeroVoiceInteraction = () => {
+  const { isSignedIn, user } = useUser();
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [selectedVoice, setSelectedVoice] = useState<'female' | 'male'>('female');
@@ -53,6 +56,9 @@ export const HeroVoiceInteraction = () => {
   const [conversationHistory, setConversationHistory] = useState<GeminiMessage[]>([]);
   const [hasStarted, setHasStarted] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [detailedFeedback, setDetailedFeedback] = useState<DetailedFeedback | null>(null);
   
   const recognition = useRef<SpeechRecognition | null>(null);
   const currentUtterance = useRef<SpeechSynthesisUtterance | null>(null);
@@ -154,7 +160,7 @@ export const HeroVoiceInteraction = () => {
             speakText(result.response);
           } catch (error) {
             console.error('Error getting AI response:', error);
-            const errorMessage = 'I understand. Could you tell me more?';
+            const errorMessage = 'That\'s interesting! Tell me more about that.';
             const aiTurn: ConversationTurn = {
               speaker: 'ai',
               message: errorMessage,
@@ -342,6 +348,11 @@ export const HeroVoiceInteraction = () => {
       return;
     }
 
+    if (!isSignedIn) {
+      alert('Please sign in to start practicing');
+      return;
+    }
+
     try {
       setIsProcessing(true);
       setHasStarted(true);
@@ -375,7 +386,65 @@ export const HeroVoiceInteraction = () => {
     setConversationHistory([]);
     setHasStarted(false);
     setIsProcessing(false);
+    setDetailedFeedback(null);
   };
+
+  const handleGetFeedback = async () => {
+    if (conversation.length === 0) {
+      alert('Start a conversation first to get feedback!');
+      return;
+    }
+
+    setFeedbackLoading(true);
+    setShowFeedbackModal(true);
+
+    try {
+      const feedback = await GeminiService.generateDetailedFeedback(
+        conversation,
+        selectedLanguage,
+        selectedTopic
+      );
+      setDetailedFeedback(feedback);
+    } catch (error) {
+      console.error('Error generating feedback:', error);
+      setDetailedFeedback(null);
+    } finally {
+      setFeedbackLoading(false);
+    }
+  };
+
+  // Show sign-in prompt if user is not signed in
+  if (!isSignedIn) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <Card className="bg-white dark:bg-navy-800 rounded-2xl shadow-2xl border border-sage-200 dark:border-navy-700">
+          <CardContent className="p-12 text-center">
+            <div className="mb-8">
+              <MessageCircle className="w-16 h-16 text-sage-600 dark:text-sage-400 mx-auto mb-4" />
+              <h2 className="text-3xl font-bold text-sage-900 dark:text-sage-100 mb-4">
+                Ready to Practice?
+              </h2>
+              <p className="text-xl text-sage-600 dark:text-sage-400 mb-8">
+                Sign in to start your conversation practice with our AI mentor and get personalized feedback!
+              </p>
+            </div>
+            
+            <div className="space-y-4">
+              <SignInButton mode="modal">
+                <Button className="w-64 h-16 text-xl bg-sage-700 dark:bg-sage-600 hover:bg-sage-800 dark:hover:bg-sage-700 text-white rounded-xl">
+                  Sign In to Practice
+                </Button>
+              </SignInButton>
+              
+              <p className="text-sm text-sage-500 dark:text-sage-400">
+                Join thousands of learners improving their communication skills
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -505,14 +574,24 @@ export const HeroVoiceInteraction = () => {
                     {selectedVoice === 'female' ? '👩' : '👨'} {selectedVoice} Voice
                   </Badge>
                 </div>
-                <Button 
-                  onClick={resetConversation} 
-                  variant="outline" 
-                  disabled={isProcessing}
-                  className="hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-700 dark:hover:text-red-300"
-                >
-                  New Conversation
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={handleGetFeedback}
+                    disabled={conversation.length === 0}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    Get Feedback
+                  </Button>
+                  <Button 
+                    onClick={resetConversation} 
+                    variant="outline" 
+                    disabled={isProcessing}
+                    className="hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-700 dark:hover:text-red-300"
+                  >
+                    New Conversation
+                  </Button>
+                </div>
               </div>
 
               {/* Enhanced Listening Animation with Theme Colors */}
@@ -663,6 +742,14 @@ export const HeroVoiceInteraction = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Feedback Modal */}
+      <FeedbackModal
+        isOpen={showFeedbackModal}
+        onClose={() => setShowFeedbackModal(false)}
+        feedback={detailedFeedback}
+        isLoading={feedbackLoading}
+      />
     </div>
   );
 };

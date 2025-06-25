@@ -19,6 +19,15 @@ export interface ConversationResponse {
   };
 }
 
+export interface DetailedFeedback {
+  overallPerformance: string;
+  strengths: string[];
+  grammaticalMistakes: string[];
+  vocabularySuggestions: string[];
+  improvementTips: string[];
+  encouragement: string;
+}
+
 export class GeminiService {
   private static async makeRequest(messages: GeminiMessage[]): Promise<any> {
     console.log('Making request to Gemini API with messages:', messages);
@@ -57,34 +66,32 @@ export class GeminiService {
       : '';
     
     const topicContext = selectedTopic ? `about ${selectedTopic.toLowerCase()}` : '';
-    const topicGreeting = this.getTopicGreeting(selectedTopic, languageName);
     
-    const systemPrompt = customPrompt || `You are ${topicGreeting} - an incredibly enthusiastic, warm, and supportive conversation mentor specializing in ${selectedTopic || 'conversation practice'} ${topicContext}! 
+    const systemPrompt = customPrompt || `You are a friendly, energetic English tutor helping users improve their communication skills! You speak like a real-life human tutor — casual, supportive, and slightly playful when needed.
     ${languageInstruction}
     
     PERSONALITY & TONE:
-    - Be SUPER energetic and encouraging like an amazing coach who genuinely cares
-    - Use topic-specific enthusiasm (like "Hey there, ${selectedTopic} superstar!" or "Awesome ${selectedTopic} skills!")
-    - Show authentic excitement about their progress and thoughts
-    - Be warm, motivating, and incredibly supportive
-    - Sound like their best friend who's also an expert mentor, not a robotic assistant
+    - Be warm, encouraging, and genuinely excited about their progress
+    - Sound like a supportive friend who happens to be a great teacher
+    - Use casual, natural language - not formal or robotic
+    - Be slightly playful and fun when appropriate
+    - Show authentic enthusiasm for their learning journey
     
     RESPONSE STYLE:
-    - Keep responses conversational and natural (2-4 sentences, 30-60 words)
-    - ALWAYS include topic-specific encouragement and excitement
-    - Ask engaging follow-up questions that dive deeper into ${selectedTopic || 'their interests'}
-    - Use varied, enthusiastic conversation starters and responses
-    - Match their energy and build genuine excitement about the topic
-    - Be VERY specific to ${selectedTopic || 'the conversation topic'} when possible
-    - Use phrases like: "That's amazing progress in ${selectedTopic}!", "I love your perspective on this!", "You're really getting the hang of ${selectedTopic}!"
+    - Keep responses SHORT and engaging (2-4 sentences max, 20-40 words)
+    - Always respond to what they said first, then ask a follow-up question
+    - Make them want to speak more - your goal is to get them talking!
+    - Use varied, natural conversation starters and responses
+    - Ask engaging questions that encourage them to share more
+    - Focus on ${selectedTopic || 'conversation practice'} when relevant
     
     CONVERSATION FLOW:
-    - Respond directly to what they said with enthusiasm first
-    - Then ask an engaging question that keeps the conversation flowing naturally
-    - Show genuine curiosity about their perspective on ${selectedTopic || 'the topic'}
-    - Use questions like: "That's fascinating! What's your experience with...", "I love that approach! Have you found that...", "That's such a brilliant insight about ${selectedTopic}! How do you usually handle..."
+    - Acknowledge what they said with enthusiasm
+    - Ask a simple, engaging follow-up question to keep them talking
+    - Use questions like: "That's cool! What do you think about...", "Nice! How do you usually...", "Awesome! What's your favorite..."
+    - Keep the conversation flowing naturally and encourage them to speak more
     
-    Remember: You're not just answering questions - you're their enthusiastic ${selectedTopic || 'conversation'} coach who's genuinely excited to help them succeed!`;
+    Remember: Your main goal is to make them feel comfortable and want to keep talking! Short, sweet, and engaging responses work best.`;
     
     const messages: GeminiMessage[] = [
       {
@@ -100,14 +107,13 @@ export class GeminiService {
 
     try {
       const result = await this.makeRequest(messages);
-      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || `Hey there, ${selectedTopic} champion! That's such an interesting point! Tell me more about your thoughts on ${selectedTopic || 'this topic'} - I'm genuinely excited to hear your perspective!`;
+      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || `That's interesting! Tell me more about that. What do you think?`;
       
       console.log('Gemini realtime response:', response);
       return response;
     } catch (error) {
       console.error('Error getting realtime response:', error);
-      const fallbackTopic = selectedTopic || 'this amazing topic';
-      return `Hey there, ${fallbackTopic} superstar! I'm so excited to explore this with you! What's your take on ${fallbackTopic}? I'd love to hear your thoughts and help you dive deeper!`;
+      return `That sounds great! What's your experience with that? I'd love to hear more!`;
     }
   }
 
@@ -119,18 +125,20 @@ export class GeminiService {
       ? `CRITICAL: Respond ONLY in ${languageName}. Never use English words or phrases.` 
       : '';
     
-    const topicGreeting = this.getTopicGreeting(selectedTopic, languageName);
-    
     const contextualPrompt = `${languageInstruction}
     
-    You are ${topicGreeting} - an incredibly enthusiastic and energetic conversation mentor for ${selectedTopic || 'conversation practice'} in ${languageName}! 
+    You are a friendly, energetic English tutor starting a conversation about ${selectedTopic || 'general topics'}! 
     
-    Start with a warm, exciting greeting like "${topicGreeting}" and immediately dive into an engaging, specific question about ${selectedTopic || 'their goals'} that gets them genuinely excited to share their thoughts and experiences.
+    Give a SHORT, warm greeting (1-2 sentences max, 15-25 words) and ask ONE simple question about ${selectedTopic || 'their interests'} to get them talking.
     
-    Be super energetic, encouraging, and show authentic interest in helping them improve their ${selectedTopic || 'conversation'} skills.
-    Keep it warm and conversational - like meeting the most amazing conversation partner who's also an expert in ${selectedTopic || 'this field'}!
+    Be casual, friendly, and encouraging. Sound like a real person, not a robot. Your goal is to make them feel comfortable and want to start sharing!
     
-    Make them feel like they're talking to their best friend who happens to be a ${selectedTopic || 'conversation'} expert!`;
+    Examples of good openings:
+    - "Hey there! I'm excited to chat with you today. What's something you're passionate about?"
+    - "Hi! Great to meet you. Tell me, what did you do this weekend?"
+    - "Hello! I love talking about ${selectedTopic || 'different topics'}. What interests you most about it?"
+    
+    Keep it short, natural, and engaging!`;
     
     const messages: GeminiMessage[] = [
       {
@@ -141,12 +149,12 @@ export class GeminiService {
 
     try {
       const result = await this.makeRequest(messages);
-      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || `${topicGreeting} I'm absolutely thrilled to practice ${selectedTopic || 'conversation'} with you today! What aspect of ${selectedTopic || 'this topic'} excites you most? I can't wait to dive in together!`;
+      const response = result.candidates?.[0]?.content?.parts?.[0]?.text || `Hey there! I'm excited to chat with you today. What's something you're passionate about?`;
       console.log('Gemini start conversation response:', response);
       return response;
     } catch (error) {
       console.error('Error starting conversation:', error);
-      return `${this.getTopicGreeting(selectedTopic, languageName)} I'm so excited to help you practice ${selectedTopic || 'conversation'} today! What would you love to explore about ${selectedTopic || 'this amazing topic'}? Let's make this super engaging!`;
+      return `Hi! Great to meet you. What's something interesting you'd like to talk about today?`;
     }
   }
 
@@ -156,11 +164,106 @@ export class GeminiService {
     return {
       response,
       feedback: {
-        grammar: 'Excellent expression!',
-        pronunciation: 'Clear and confident delivery',
-        fluency: 'Natural conversational flow!'
+        grammar: 'Great job!',
+        pronunciation: 'Clear speaking',
+        fluency: 'Natural flow!'
       }
     };
+  }
+
+  static async generateDetailedFeedback(conversationMessages: any[], selectedLanguage?: string, selectedTopic?: string): Promise<DetailedFeedback> {
+    const languageName = this.getLanguageName(selectedLanguage || 'en');
+    const languageInstruction = selectedLanguage && selectedLanguage !== 'en' 
+      ? `Provide feedback in ${languageName}.` 
+      : '';
+    
+    const userMessages = conversationMessages
+      .filter(msg => msg.speaker === 'user')
+      .map(msg => msg.message)
+      .join('\n');
+
+    const feedbackPrompt = `As a friendly English tutor, analyze this conversation and provide detailed, encouraging feedback. ${languageInstruction}
+
+    Topic: ${selectedTopic || 'General conversation'}
+    User's messages: ${userMessages}
+
+    Provide specific feedback in JSON format:
+    {
+      "overallPerformance": "Brief encouraging assessment (1-2 sentences)",
+      "strengths": ["List 2-3 specific things they did well"],
+      "grammaticalMistakes": ["Only major/recurring errors with corrections - max 3"],
+      "vocabularySuggestions": ["2-3 alternative words/phrases they could use"],
+      "improvementTips": ["2-3 actionable suggestions for better communication"],
+      "encouragement": "Motivating closing message (1-2 sentences)"
+    }
+
+    Keep the tone supportive and constructive. Focus on growth and progress. Be specific but encouraging.`;
+
+    const messages: GeminiMessage[] = [
+      {
+        role: 'user',
+        parts: [{ text: feedbackPrompt }]
+      }
+    ];
+
+    try {
+      const result = await this.makeRequest(messages);
+      const feedbackText = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      
+      // Try to parse JSON response
+      try {
+        const jsonMatch = feedbackText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const feedback = JSON.parse(jsonMatch[0]);
+          return feedback;
+        }
+      } catch (parseError) {
+        console.error('Error parsing feedback JSON:', parseError);
+      }
+      
+      // Fallback if JSON parsing fails
+      return {
+        overallPerformance: "Great job in our conversation today! You showed good communication skills.",
+        strengths: [
+          "You expressed your thoughts clearly",
+          "Good use of natural conversation flow",
+          "Showed enthusiasm in your responses"
+        ],
+        grammaticalMistakes: [
+          "Consider using more varied sentence structures"
+        ],
+        vocabularySuggestions: [
+          "Try using more descriptive adjectives",
+          "Experiment with different ways to express opinions"
+        ],
+        improvementTips: [
+          "Practice speaking with more confidence",
+          "Try to elaborate more on your ideas",
+          "Use transition words to connect your thoughts"
+        ],
+        encouragement: "Keep practicing! You're making excellent progress in your English communication journey."
+      };
+    } catch (error) {
+      console.error('Error generating detailed feedback:', error);
+      return {
+        overallPerformance: "Wonderful conversation practice! You're doing great.",
+        strengths: [
+          "Clear communication",
+          "Good engagement",
+          "Natural conversation style"
+        ],
+        grammaticalMistakes: [],
+        vocabularySuggestions: [
+          "Keep expanding your vocabulary",
+          "Try using more varied expressions"
+        ],
+        improvementTips: [
+          "Continue practicing regularly",
+          "Focus on speaking with confidence"
+        ],
+        encouragement: "You're on the right track! Keep up the excellent work."
+      };
+    }
   }
 
   static async generateFeedback(conversationMessages: any[], selectedLanguage?: string, selectedTopic?: string): Promise<string> {
