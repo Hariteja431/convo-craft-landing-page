@@ -1,5 +1,5 @@
 // OpenAI API service for STT, TTS, and LLM
-const OPENAI_API_KEY = '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';
+const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
 const OPENAI_BASE_URL = 'https://api.openai.com/v1';
 
 export interface OpenAIMessage {
@@ -45,6 +45,10 @@ export class OpenAIAPIError extends Error {
 export class OpenAIService {
   // Text-to-Speech using OpenAI
   static async textToSpeech(text: string, voice: 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer' = 'alloy'): Promise<ArrayBuffer> {
+    if (!OPENAI_API_KEY) {
+      throw new OpenAIAPIError('OpenAI API key is not configured', 401, false, false);
+    }
+
     try {
       const response = await fetch(`${OPENAI_BASE_URL}/audio/speech`, {
         method: 'POST',
@@ -80,6 +84,10 @@ export class OpenAIService {
 
   // Speech-to-Text using OpenAI Whisper
   static async speechToText(audioBlob: Blob): Promise<string> {
+    if (!OPENAI_API_KEY) {
+      throw new OpenAIAPIError('OpenAI API key is not configured', 401, false, false);
+    }
+
     try {
       const formData = new FormData();
       formData.append('file', audioBlob, 'audio.wav');
@@ -115,6 +123,10 @@ export class OpenAIService {
 
   // Chat completion using OpenAI GPT
   private static async makeRequest(messages: OpenAIMessage[]): Promise<any> {
+    if (!OPENAI_API_KEY) {
+      throw new OpenAIAPIError('OpenAI API key is not configured', 401, false, false);
+    }
+
     console.log('Making request to OpenAI API with messages:', messages);
     
     try {
