@@ -28,33 +28,79 @@ export interface DetailedFeedback {
   encouragement: string;
 }
 
+export class GeminiAPIError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+    public isQuotaExceeded: boolean = false,
+    public isRateLimited: boolean = false
+  ) {
+    super(message);
+    this.name = 'GeminiAPIError';
+  }
+}
+
 export class GeminiService {
   private static async makeRequest(messages: GeminiMessage[]): Promise<any> {
     console.log('Making request to Gemini API with messages:', messages);
     
-    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: messages,
-        generationConfig: {
-          temperature: 0.9,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 1024,
+    try {
+      const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      }),
-    });
+        body: JSON.stringify({
+          contents: messages,
+          generationConfig: {
+            temperature: 0.9,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 1024,
+          },
+        }),
+      });
 
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error('Gemini API error response:', errorData);
-      throw new Error(`Gemini API error: ${response.status} - ${errorData}`);
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Gemini API error response:', errorData);
+        
+        let parsedError;
+        try {
+          parsedError = JSON.parse(errorData);
+        } catch {
+          parsedError = { error: { message: errorData } };
+        }
+        
+        const isQuotaExceeded = response.status === 429 && 
+          (parsedError.error?.message?.includes('quota') || 
+           parsedError.error?.message?.includes('exceeded'));
+        
+        const isRateLimited = response.status === 429;
+        
+        throw new GeminiAPIError(
+          parsedError.error?.message || `API request failed with status ${response.status}`,
+          response.status,
+          isQuotaExceeded,
+          isRateLimited
+        );
+      }
+
+      return response.json();
+    } catch (error) {
+      if (error instanceof GeminiAPIError) {
+        throw error;
+      }
+      
+      // Handle network errors or other issues
+      console.error('Network or other error:', error);
+      throw new GeminiAPIError(
+        'Unable to connect to AI service. Please check your internet connection.',
+        0,
+        false,
+        false
+      );
     }
-
-    return response.json();
   }
 
   static async getRealtimeResponse(userMessage: string, conversationHistory: GeminiMessage[] = [], customPrompt?: string, selectedLanguage?: string, selectedTopic?: string): Promise<string> {
@@ -113,6 +159,15 @@ export class GeminiService {
       return response;
     } catch (error) {
       console.error('Error getting realtime response:', error);
+      
+      if (error instanceof GeminiAPIError) {
+        if (error.isQuotaExceeded) {
+          return `I'm sorry, but we've reached our daily conversation limit. The service will be available again tomorrow. Thank you for practicing with us today!`;
+        } else if (error.isRateLimited) {
+          return `I need a moment to catch up. Let's continue our conversation in just a few seconds!`;
+        }
+      }
+      
       return `That sounds great! What's your experience with that? I'd love to hear more!`;
     }
   }
@@ -154,6 +209,15 @@ export class GeminiService {
       return response;
     } catch (error) {
       console.error('Error starting conversation:', error);
+      
+      if (error instanceof GeminiAPIError) {
+        if (error.isQuotaExceeded) {
+          return `Welcome! I'd love to chat, but we've reached our daily conversation limit. Please try again tomorrow!`;
+        } else if (error.isRateLimited) {
+          return `Hi there! Give me just a moment to get ready, then we can start our conversation!`;
+        }
+      }
+      
       return `Hi! Great to meet you. What's something interesting you'd like to talk about today?`;
     }
   }
@@ -222,48 +286,44 @@ export class GeminiService {
       }
       
       // Fallback if JSON parsing fails
-      return {
-        overallPerformance: "Great job in our conversation today! You showed good communication skills.",
-        strengths: [
-          "You expressed your thoughts clearly",
-          "Good use of natural conversation flow",
-          "Showed enthusiasm in your responses"
-        ],
-        grammaticalMistakes: [
-          "Consider using more varied sentence structures"
-        ],
-        vocabularySuggestions: [
-          "Try using more descriptive adjectives",
-          "Experiment with different ways to express opinions"
-        ],
-        improvementTips: [
-          "Practice speaking with more confidence",
-          "Try to elaborate more on your ideas",
-          "Use transition words to connect your thoughts"
-        ],
-        encouragement: "Keep practicing! You're making excellent progress in your English communication journey."
-      };
+      return this.getFallbackFeedback();
     } catch (error) {
       console.error('Error generating detailed feedback:', error);
-      return {
-        overallPerformance: "Wonderful conversation practice! You're doing great.",
-        strengths: [
-          "Clear communication",
-          "Good engagement",
-          "Natural conversation style"
-        ],
-        grammaticalMistakes: [],
-        vocabularySuggestions: [
-          "Keep expanding your vocabulary",
-          "Try using more varied expressions"
-        ],
-        improvementTips: [
-          "Continue practicing regularly",
-          "Focus on speaking with confidence"
-        ],
-        encouragement: "You're on the right track! Keep up the excellent work."
-      };
+      
+      if (error instanceof GeminiAPIError) {
+        if (error.isQuotaExceeded) {
+          throw new Error('QUOTA_EXCEEDED');
+        } else if (error.isRateLimited) {
+          throw new Error('RATE_LIMITED');
+        }
+      }
+      
+      return this.getFallbackFeedback();
     }
+  }
+
+  private static getFallbackFeedback(): DetailedFeedback {
+    return {
+      overallPerformance: "Great job in our conversation today! You showed good communication skills.",
+      strengths: [
+        "You expressed your thoughts clearly",
+        "Good use of natural conversation flow",
+        "Showed enthusiasm in your responses"
+      ],
+      grammaticalMistakes: [
+        "Consider using more varied sentence structures"
+      ],
+      vocabularySuggestions: [
+        "Try using more descriptive adjectives",
+        "Experiment with different ways to express opinions"
+      ],
+      improvementTips: [
+        "Practice speaking with more confidence",
+        "Try to elaborate more on your ideas",
+        "Use transition words to connect your thoughts"
+      ],
+      encouragement: "Keep practicing! You're making excellent progress in your English communication journey."
+    };
   }
 
   static async generateFeedback(conversationMessages: any[], selectedLanguage?: string, selectedTopic?: string): Promise<string> {
@@ -303,6 +363,11 @@ export class GeminiService {
       return result.candidates?.[0]?.content?.parts?.[0]?.text || 'Great job on your conversation practice! Keep up the excellent work!';
     } catch (error) {
       console.error('Error generating feedback:', error);
+      
+      if (error instanceof GeminiAPIError && error.isQuotaExceeded) {
+        return 'We\'ve reached our daily feedback limit, but your conversation practice was excellent! Please try again tomorrow for detailed feedback.';
+      }
+      
       return 'Wonderful conversation practice! You showed great engagement and communication skills. Keep practicing!';
     }
   }

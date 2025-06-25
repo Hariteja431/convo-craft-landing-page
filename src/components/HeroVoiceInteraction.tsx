@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Mic, MicOff, Volume2, VolumeX, User, Users, MessageCircle, MessageSquare } from 'lucide-react';
+import { Mic, MicOff, Volume2, VolumeX, User, Users, MessageCircle, MessageSquare, AlertCircle, Clock } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -59,6 +59,8 @@ export const HeroVoiceInteraction = () => {
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [detailedFeedback, setDetailedFeedback] = useState<DetailedFeedback | null>(null);
+  const [quotaExceeded, setQuotaExceeded] = useState(false);
+  const [showQuotaWarning, setShowQuotaWarning] = useState(false);
   
   const recognition = useRef<SpeechRecognition | null>(null);
   const currentUtterance = useRef<SpeechSynthesisUtterance | null>(null);
@@ -143,6 +145,12 @@ export const HeroVoiceInteraction = () => {
               selectedLanguage, 
               selectedTopic
             );
+            
+            // Check if the response indicates quota exceeded
+            if (result.response.includes('daily conversation limit') || result.response.includes('daily limit')) {
+              setQuotaExceeded(true);
+              setShowQuotaWarning(true);
+            }
             
             const aiTurn: ConversationTurn = {
               speaker: 'ai',
@@ -288,7 +296,7 @@ export const HeroVoiceInteraction = () => {
         utterance.onend = () => {
           setIsSpeaking(false);
           setTimeout(() => {
-            if (!isListening && !isProcessing && hasStarted) {
+            if (!isListening && !isProcessing && hasStarted && !quotaExceeded) {
               startListening();
             }
           }, 800); // Slightly longer pause for more natural conversation flow
@@ -317,6 +325,11 @@ export const HeroVoiceInteraction = () => {
   const startListening = async () => {
     if (!recognition.current) {
       alert('Speech recognition is not supported in your browser');
+      return;
+    }
+
+    if (quotaExceeded) {
+      setShowQuotaWarning(true);
       return;
     }
 
@@ -356,8 +369,16 @@ export const HeroVoiceInteraction = () => {
     try {
       setIsProcessing(true);
       setHasStarted(true);
+      setQuotaExceeded(false);
+      setShowQuotaWarning(false);
       
       const aiResponse = await GeminiService.startConversation('', selectedLanguage, selectedTopic);
+      
+      // Check if the response indicates quota exceeded
+      if (aiResponse.includes('daily conversation limit') || aiResponse.includes('daily limit')) {
+        setQuotaExceeded(true);
+        setShowQuotaWarning(true);
+      }
       
       const aiTurn: ConversationTurn = {
         speaker: 'ai',
@@ -387,6 +408,8 @@ export const HeroVoiceInteraction = () => {
     setHasStarted(false);
     setIsProcessing(false);
     setDetailedFeedback(null);
+    setQuotaExceeded(false);
+    setShowQuotaWarning(false);
   };
 
   const handleGetFeedback = async () => {
@@ -407,7 +430,54 @@ export const HeroVoiceInteraction = () => {
       setDetailedFeedback(feedback);
     } catch (error) {
       console.error('Error generating feedback:', error);
-      setDetailedFeedback(null);
+      
+      if (error instanceof Error) {
+        if (error.message === 'QUOTA_EXCEEDED') {
+          setDetailedFeedback({
+            overallPerformance: "We've reached our daily feedback limit, but your conversation practice was excellent!",
+            strengths: [
+              "You actively participated in the conversation",
+              "Showed good engagement throughout the session",
+              "Demonstrated willingness to practice and improve"
+            ],
+            grammaticalMistakes: [],
+            vocabularySuggestions: [
+              "Continue building your vocabulary through daily practice",
+              "Try reading diverse content to expand your word knowledge"
+            ],
+            improvementTips: [
+              "Keep practicing regularly - consistency is key",
+              "Try again tomorrow for detailed AI feedback",
+              "Focus on speaking with confidence"
+            ],
+            encouragement: "Your dedication to practice is commendable! Please try again tomorrow for detailed feedback."
+          });
+        } else if (error.message === 'RATE_LIMITED') {
+          setDetailedFeedback({
+            overallPerformance: "Great conversation! Please wait a moment before requesting feedback again.",
+            strengths: [
+              "You completed a full conversation session",
+              "Showed persistence in practicing",
+              "Engaged well with the AI mentor"
+            ],
+            grammaticalMistakes: [],
+            vocabularySuggestions: [
+              "Keep practicing to build fluency",
+              "Try different conversation topics"
+            ],
+            improvementTips: [
+              "Wait a few minutes and try feedback again",
+              "Continue practicing conversations",
+              "Focus on natural speech patterns"
+            ],
+            encouragement: "You're doing great! Please try requesting feedback again in a few minutes."
+          });
+        } else {
+          setDetailedFeedback(null);
+        }
+      } else {
+        setDetailedFeedback(null);
+      }
     } finally {
       setFeedbackLoading(false);
     }
@@ -448,6 +518,36 @@ export const HeroVoiceInteraction = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
+      {/* Quota Warning Banner */}
+      {showQuotaWarning && (
+        <Card className="mb-6 bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-amber-800 dark:text-amber-200">Daily Limit Reached</h3>
+                <p className="text-sm text-amber-700 dark:text-amber-300">
+                  We've reached our daily conversation limit. The service will be available again tomorrow. 
+                  Thank you for practicing with us today!
+                </p>
+              </div>
+              <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                <Clock className="w-4 h-4" />
+                <span className="text-sm font-medium">Resets at midnight</span>
+              </div>
+              <Button
+                onClick={() => setShowQuotaWarning(false)}
+                variant="ghost"
+                size="sm"
+                className="text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30"
+              >
+                ×
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card className="bg-white dark:bg-navy-800 rounded-2xl shadow-2xl border border-sage-200 dark:border-navy-700">
         <CardContent className="p-8 space-y-8">
           {/* Settings Section */}
@@ -573,6 +673,12 @@ export const HeroVoiceInteraction = () => {
                   <Badge className="ml-2 bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300">
                     {selectedVoice === 'female' ? '👩' : '👨'} {selectedVoice} Voice
                   </Badge>
+                  {quotaExceeded && (
+                    <Badge className="ml-2 bg-amber-100 dark:bg-amber-800 text-amber-700 dark:text-amber-300">
+                      <Clock className="w-3 h-3 mr-1" />
+                      Daily Limit Reached
+                    </Badge>
+                  )}
                 </div>
                 <div className="flex gap-2">
                   <Button 
@@ -621,13 +727,15 @@ export const HeroVoiceInteraction = () => {
                   {/* Main button with sage theme */}
                   <div 
                     className={`w-32 h-32 rounded-full transition-all duration-300 ${
-                      isListening 
+                      quotaExceeded
+                        ? 'bg-gradient-to-br from-gray-300 via-gray-400 to-gray-500 cursor-not-allowed'
+                        : isListening 
                         ? 'bg-gradient-to-br from-sage-400 via-sage-500 to-sage-700 dark:from-sage-500 dark:via-sage-600 dark:to-sage-800' 
                         : isProcessing
                         ? 'bg-gradient-to-br from-sage-300 via-sage-400 to-sage-600'
                         : 'bg-gradient-to-br from-sage-500 via-sage-600 to-sage-800 hover:scale-105'
                     } shadow-xl flex items-center justify-center cursor-pointer`}
-                    onClick={!isProcessing ? toggleListening : undefined}
+                    onClick={!isProcessing && !quotaExceeded ? toggleListening : quotaExceeded ? () => setShowQuotaWarning(true) : undefined}
                     style={{
                       transform: isListening ? `scale(${1.05 + audioLevel * 0.2})` : undefined,
                       boxShadow: isListening 
@@ -635,7 +743,12 @@ export const HeroVoiceInteraction = () => {
                         : undefined
                     }}
                   >
-                    {isProcessing ? (
+                    {quotaExceeded ? (
+                      <div className="flex flex-col items-center text-white">
+                        <Clock className="w-8 h-8" />
+                        <span className="text-xs mt-1 font-medium">Limit Reached</span>
+                      </div>
+                    ) : isProcessing ? (
                       <div className="flex flex-col items-center text-white">
                         <div className="w-8 h-8 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
                         <span className="text-xs mt-2 font-medium">Processing</span>
@@ -650,7 +763,19 @@ export const HeroVoiceInteraction = () => {
 
                 {/* Status Display */}
                 <div className="mt-6 min-h-[80px] flex flex-col justify-center">
-                  {isProcessing && (
+                  {quotaExceeded && (
+                    <div className="text-center">
+                      <Badge className="bg-amber-100 dark:bg-amber-800 text-amber-700 dark:text-amber-300 mb-3 px-4 py-2">
+                        <Clock className="w-3 h-3 mr-1" />
+                        Daily Limit Reached
+                      </Badge>
+                      <p className="text-amber-600 dark:text-amber-400 text-sm font-medium">
+                        We've reached our daily conversation limit. Please try again tomorrow!
+                      </p>
+                    </div>
+                  )}
+                  
+                  {!quotaExceeded && isProcessing && (
                     <div className="flex items-center justify-center gap-2">
                       <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce"></div>
                       <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
@@ -659,7 +784,7 @@ export const HeroVoiceInteraction = () => {
                     </div>
                   )}
                   
-                  {isSpeaking && (
+                  {!quotaExceeded && isSpeaking && (
                     <div className="flex items-center justify-center gap-3">
                       <Volume2 className="w-5 h-5 text-sage-600 dark:text-sage-400 animate-pulse" />
                       <span className="text-sage-600 dark:text-sage-400 font-medium">AI mentor is speaking...</span>
@@ -674,7 +799,7 @@ export const HeroVoiceInteraction = () => {
                     </div>
                   )}
                   
-                  {isListening && (
+                  {!quotaExceeded && isListening && (
                     <div className="text-center">
                       <Badge className="bg-sage-100 dark:bg-sage-800 text-sage-700 dark:text-sage-300 mb-3 animate-pulse px-4 py-2">
                         🎤 Listening...
@@ -691,7 +816,7 @@ export const HeroVoiceInteraction = () => {
                     </div>
                   )}
                   
-                  {!isListening && !isProcessing && !isSpeaking && (
+                  {!quotaExceeded && !isListening && !isProcessing && !isSpeaking && (
                     <div className="text-center">
                       <Badge className="bg-sage-100 dark:bg-sage-800 text-sage-700 dark:text-sage-300 mb-3 px-4 py-2">
                         Ready to Listen
